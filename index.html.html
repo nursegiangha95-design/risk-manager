@@ -1,0 +1,2656 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản Lý Rủi Ro v5 — FMEA & Cloud Sync</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14;--surface:#14171f;--surface2:#1c202c;--surface3:#252a38;
+  --border:#2a2f42;--border2:#363d55;--text:#e8eaf2;--text2:#8b90a8;--text3:#565d7a;
+  --accent:#4f7cff;--accent2:#3561e8;--green:#2dd4a0;--green-bg:#0d2b22;
+  --red:#ff5e6a;--red-bg:#2b0d10;--amber:#f5a623;--amber-bg:#2b1f0a;
+  --purple:#b57aff;--teal:#22d3ee;--radius:8px;--radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;}
+input,select,textarea{font-family:inherit;font-size:13px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:8px 12px;outline:none;transition:border-color .15s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+select option{background:var(--surface2);}
+textarea{resize:vertical;min-height:72px;}
+label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:4px;}
+#app{display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-weight:700;font-size:16px;color:var(--text);letter-spacing:-.3px;display:flex;align-items:center;gap:8px;}
+.topbar-logo span{color:var(--accent);}
+.topbar-nav{display:flex;gap:4px;margin-left:16px;}
+.nav-btn{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text2);background:transparent;transition:all .15s;}
+.nav-btn:hover{color:var(--text);background:var(--surface2);}
+.nav-btn.active{color:var(--text);background:var(--surface3);}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.main{flex:1;display:flex;}
+.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);padding:16px;flex-shrink:0;overflow-y:auto;max-height:calc(100vh - 56px);position:sticky;top:56px;}
+.content{flex:1;padding:24px;overflow:auto;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2);background:var(--surface2);}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid #5a1a1e;}
+.btn-danger:hover{background:#3a1215;}
+.btn-success{background:var(--green-bg);color:var(--green);border:1px solid #1a4a38;}
+.btn-success:hover{background:#153d2e;}
+.btn-amber{background:var(--amber-bg);color:var(--amber);border:1px solid #4a3010;}
+.btn-amber:hover{background:#3a2508;}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.btn-icon{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:14px;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.3px;}
+.badge-trongyeu{background:#3a0a0c;color:#ff5e6a;border:1px solid #5a1215;}
+.badge-dangke{background:#2b1a07;color:#f5a623;border:1px solid #4a2e0a;}
+.badge-trungbinh{background:#1e2a12;color:#86c946;border:1px solid #2e4018;}
+.badge-thap{background:#0d1e28;color:#38b2d4;border:1px solid #123244;}
+.risk-list{display:flex;flex-direction:column;gap:2px;}
+.risk-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;cursor:pointer;transition:all .12s;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:start;}
+.risk-item:hover{border-color:var(--border2);background:var(--surface2);}
+.risk-item.selected{border-color:var(--accent);background:#0f1829;}
+.risk-stt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);font-weight:500;padding-top:2px;}
+.risk-body{min-width:0;}
+.risk-name{font-weight:600;font-size:13px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.risk-sub{font-size:11px;color:var(--text3);}
+.risk-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.form-grid{display:grid;gap:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:8px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.measure-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;position:relative;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:760px;position:relative;}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-body{padding:20px 24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.version-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:8px;}
+.version-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.delta-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:var(--radius);margin-bottom:4px;font-size:13px;}
+.delta-new{background:var(--green-bg);border:1px solid #1a4a38;}
+.delta-removed{background:var(--red-bg);border:1px solid #4a1215;}
+.delta-improved{background:#0d1e2a;border:1px solid #103040;}
+.delta-worsened{background:#2a1005;border:1px solid #4a2010;}
+.delta-label{flex:1;}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;line-height:1;margin-bottom:4px;}
+.stat-label{font-size:11px;color:var(--text2);}
+.search-box{position:relative;margin-bottom:12px;}
+.search-box input{padding-left:32px;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;}
+.empty{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;font-size:13px;display:flex;align-items:center;gap:8px;animation:slide-in .2s ease;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.toast-success{border-color:#1a4a38;}
+.toast-error{border-color:#4a1215;}
+@keyframes slide-in{from{transform:translateX(20px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px;}
+.progress-fill{height:100%;border-radius:2px;background:var(--green);transition:width .3s;}
+
+/* Import drop zone */
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:40px;text-align:center;transition:all .2s;cursor:pointer;}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:#0f1829;}
+.drop-zone-icon{font-size:36px;margin-bottom:12px;}
+
+/* Import preview table */
+.import-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px;}
+.import-table th{background:var(--surface3);padding:6px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);}
+.import-table td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+.import-table tr:hover td{background:var(--surface2);}
+
+/* Guide */
+.guide-step{display:flex;gap:16px;margin-bottom:24px;}
+.guide-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.guide-content h3{font-size:14px;font-weight:700;margin-bottom:4px;}
+.guide-content p{font-size:13px;color:var(--text2);line-height:1.6;}
+.code-block{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--teal);margin-top:8px;word-break:break-all;}
+.option-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.option-card h3{font-size:15px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.option-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;}
+.badge-free{background:var(--green-bg);color:var(--green);border:1px solid #1a4a38;}
+.badge-easy{background:#0f1829;color:var(--accent);border:1px solid var(--border2);}
+
+/* Dashboard */
+.db-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.db-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;}
+.db-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:22px;}
+.db-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;}
+.db-card-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.kpi-num{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;line-height:1;margin-bottom:4px;}
+.kpi-label{font-size:12px;color:var(--text2);}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+/* Bar chart */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.bar-label{font-size:12px;color:var(--text2);width:130px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-label-sm{width:90px;}
+.bar-track{flex:1;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease;display:flex;align-items:center;padding-left:8px;}
+.bar-fill-label{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;}
+.bar-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);width:28px;text-align:right;flex-shrink:0;}
+/* Donut */
+.donut-wrap{display:flex;align-items:center;gap:20px;}
+.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1;}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.legend-label{flex:1;color:var(--text2);}
+.legend-val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;}
+/* Timeline / action rows */
+.action-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);margin-bottom:4px;font-size:12px;}
+.action-overdue{background:#2b0d10;border:1px solid #5a1a1e;}
+.action-soon{background:#251a07;border:1px solid #4a3010;}
+.action-periodic{background:#0d1e2a;border:1px solid #1a3a50;}
+.action-ongoing{background:#0d2219;border:1px solid #1a4a38;}
+/* Progress ring */
+.ring-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ring-label{font-size:11px;color:var(--text2);text-align:center;}
+/* Heatmap */
+.heatmap-grid{display:grid;gap:3px;}
+.heatmap-cell{border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:default;transition:transform .1s;}
+.heatmap-cell:hover{transform:scale(1.1);}
+@media(max-width:1100px){.db-grid-4{grid-template-columns:repeat(2,1fr);}.db-grid-3{grid-template-columns:1fr 1fr;}}
+@media print{
+  .topbar,.sidebar,.topbar-right,.no-print{display:none!important;}
+  body{background:#fff;color:#000;}
+  .print-content{padding:0;}
+  .print-section{page-break-inside:avoid;}
+}
+
+/* FMEA */
+.fmea-table{width:100%;border-collapse:collapse;font-size:12px;}
+.fmea-table th{background:var(--surface3);padding:8px 10px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;}
+.fmea-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;}
+.fmea-table tr:hover td{background:var(--surface2);}
+.rpn-badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:3px 8px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;}
+.rpn-critical{background:var(--red-bg);color:var(--red);border:1px solid #5a1a1e;}
+.rpn-significant{background:var(--amber-bg);color:var(--amber);border:1px solid #4a3010;}
+.rpn-acceptable{background:var(--green-bg);color:var(--green);border:1px solid #1a4a38;}
+.sod-input{width:56px;text-align:center;padding:6px 4px;}
+.fmea-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+.fmea-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+.sod-legend{font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;}
+.sync-pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;animation:pulse-dot 2s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* Dashboard drilldown — clickable elements */
+.db-clickable{cursor:pointer;transition:transform .12s, box-shadow .12s;}
+.db-clickable:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.35);}
+.db-card.db-clickable:hover{border-color:var(--accent);}
+.bar-row.db-clickable:hover .bar-track{filter:brightness(1.25);}
+.bar-row.db-clickable:hover .bar-label{color:var(--text);}
+.heatmap-td{cursor:pointer;transition:transform .1s, filter .1s;}
+.heatmap-td:hover{filter:brightness(1.3);transform:scale(1.05);}
+.kpi-clickable{cursor:pointer;transition:transform .12s, box-shadow .12s;}
+.kpi-clickable:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.35);border-color:var(--accent2);}
+.drill-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);margin-bottom:6px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .12s;}
+.drill-row:hover{border-color:var(--accent);background:#0f1829;}
+.drill-row-main{flex:1;min-width:0;}
+.drill-row-title{font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.drill-row-sub{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.drill-empty{text-align:center;padding:40px 20px;color:var(--text3);}
+/* LOGIN SCREEN */
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.login-logo{font-size:28px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:28px;}
+.login-field{margin-bottom:14px;}
+.login-field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.login-error{background:var(--red-bg);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:14px;display:none;}
+/* ROLE BADGE */
+.role-admin{background:#1a2a4a;color:var(--accent);border:1px solid var(--accent);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+.role-editor{background:#1a3a2a;color:var(--green);border:1px solid var(--green);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+.role-viewer{background:var(--surface2);color:var(--text2);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+/* ADMIN TABLE */
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;}
+.admin-table th{background:var(--surface3);padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);}
+.admin-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+.admin-table tr:hover td{background:var(--surface2);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">⬡ RiskManager</div>
+    <div class="login-sub">Hệ thống quản lý rủi ro — Bệnh viện Sài Gòn Tam Kỳ</div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="email@benhvien.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Mật khẩu</label>
+      <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px;padding:12px" id="login-btn" onclick="doLogin()">Đăng nhập</button>
+    <div style="margin-top:16px;font-size:12px;color:var(--text3);text-align:center">Liên hệ quản trị viên để được cấp tài khoản</div>
+  </div>
+</div>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">⬡ <span>RiskManager</span> <span style="font-size:10px;background:#0d2b22;color:var(--green);border:1px solid #1a4a38;padding:1px 7px;border-radius:4px;font-weight:600;letter-spacing:.5px" id="sync-status-badge">☁ CLOUD</span> <span id="ping-indicator" title="Auto-ping giữ Supabase không bị pause" style="font-size:10px;color:var(--text3);cursor:default"><span class="sync-pulse"></span>keep-alive</span></div>
+    <div class="topbar-nav">
+      <button class="nav-btn" id="tab-dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="nav-btn active" id="tab-list" onclick="switchTab('list')">Danh sách rủi ro</button>
+      <button class="nav-btn" id="tab-fmea" onclick="switchTab('fmea')">🧪 FMEA</button>
+      <button class="nav-btn" id="tab-hieuqua" onclick="switchTab('hieuqua')">📋 Đánh giá hiệu quả</button>
+      <button class="nav-btn" id="tab-versions" onclick="switchTab('versions')">Phiên bản</button>
+      <button class="nav-btn" id="tab-compare" onclick="switchTab('compare')">So sánh</button>
+      <button class="nav-btn" id="tab-guide" onclick="switchTab('guide')">Dùng chung</button>
+      <button class="nav-btn" id="tab-admin" onclick="switchTab('admin')" style="display:none;color:var(--accent)">⚙ Quản trị</button>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-success btn-sm" onclick="syncPull()" id="btn-pull" title="Kéo dữ liệu mới nhất từ cloud">⬇ Pull</button>
+      <button class="btn btn-primary btn-sm" onclick="syncPush()" id="btn-push" title="Đẩy dữ liệu của bạn lên cloud">⬆ Push</button>
+      <div id="user-info" style="display:flex;align-items:center;gap:8px;padding:0 8px;border-left:1px solid var(--border)">
+        <div style="text-align:right">
+          <div id="user-name" style="font-size:12px;font-weight:600;color:var(--text)"></div>
+          <div id="user-role-badge"></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="doLogout()" title="Đăng xuất">↩ Thoát</button>
+      </div>
+      <div style="width:1px;height:20px;background:var(--border)"></div>
+      <button class="btn btn-amber btn-sm" onclick="openImportModal()">📂 Import Excel</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportXlsx()">⬇ Xuất Excel</button>
+      <button class="btn btn-ghost btn-sm" onclick="openAddModal()">+ Thêm rủi ro</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <aside class="sidebar" id="sidebar">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Tìm kiếm..." id="search-input" oninput="renderList()">
+      </div>
+      <div style="margin-bottom:8px">
+        <select id="filter-loai" onchange="renderList()" style="font-size:12px">
+          <option value="">Tất cả nhóm</option>
+          <option>Rủi ro chuyên môn</option><option>Rủi ro hoạt động</option>
+          <option>Rủi ro tuân thủ</option><option>Rủi ro tài chính</option>
+          <option>Rủi ro CNTT</option><option>Rủi ro danh tiếng</option>
+          <option>Rủi ro chiến lược</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <select id="filter-mucdo" onchange="renderList()" style="font-size:12px">
+          <option value="">Tất cả mức độ</option>
+          <option>Trọng yếu</option><option>Đáng kể</option>
+          <option>Trung bình</option><option>Thấp</option>
+        </select>
+      </div>
+      <div id="sidebar-stats" style="margin-bottom:12px;padding:10px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)"></div>
+      <div class="risk-list" id="risk-list"></div>
+    </aside>
+
+    <div class="content">
+      <!-- DASHBOARD TAB -->
+      <div id="tab-content-dashboard" style="display:none">
+        <div id="dashboard-root"></div>
+      </div>
+
+      <div id="tab-content-list">
+        <div id="detail-empty" class="empty">
+          <div class="empty-icon">📋</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:8px">Chọn một rủi ro để xem chi tiết</div>
+          <div style="color:var(--text3)">Hoặc nhấn <strong style="color:var(--amber)">⬆ Import Excel</strong> để nhập từ file gốc</div>
+        </div>
+        <div id="detail-panel" style="display:none"></div>
+      </div>
+
+      <!-- FMEA TAB -->
+      <div id="tab-content-fmea" style="display:none">
+        <div class="fmea-toolbar">
+          <div>
+            <div style="font-size:20px;font-weight:700">FMEA — Phân tích hình thức & ảnh hưởng sai lỗi</div>
+            <div style="color:var(--text2);font-size:13px;margin-top:2px">RPN = Mức độ nghiêm trọng (S) × Khả năng xảy ra (O) × Khả năng phát hiện (D)</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="exportFmeaXlsx()">⬇ Xuất Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="openFmeaModal()">+ Thêm mục FMEA</button>
+          </div>
+        </div>
+        <div class="sod-legend">
+          <strong>Thang điểm 1–10:</strong> S (Nghiêm trọng): 1=không đáng kể … 10=nguy hiểm/nghiêm trọng nhất ·
+          O (Xảy ra): 1=hiếm khi … 10=gần như chắc chắn ·
+          D (Phát hiện): 1=luôn phát hiện được trước … 10=không thể phát hiện trước khi xảy ra.
+          RPN ≥ 200: <span style="color:var(--red);font-weight:600">Trọng yếu</span> · 100–199: <span style="color:var(--amber);font-weight:600">Đáng kể</span> · &lt;100: <span style="color:var(--green);font-weight:600">Chấp nhận được</span>
+        </div>
+        <div class="stats-grid" id="fmea-stats"></div>
+        <div class="fmea-card" style="padding:0;overflow-x:auto">
+          <table class="fmea-table" id="fmea-table"></table>
+        </div>
+      </div>
+
+      <!-- ĐÁNH GIÁ HIỆU QUẢ BIỆN PHÁP TAB -->
+      <div id="tab-content-hieuqua" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:20px;font-weight:700">Đánh giá hiệu quả biện pháp</div>
+            <div style="color:var(--text2);font-size:13px;margin-top:2px">Thiết kế × Vận hành = Hiệu quả · Theo dõi hoạt động tiếp theo</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="exportHieuQuaXlsx()">⬇ Xuất Excel</button>
+          </div>
+        </div>
+        <div class="stats-grid" id="hq-stats"></div>
+
+        <!-- Thanh tìm kiếm + filter -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px">
+          <div style="flex:1;min-width:200px;position:relative">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px">🔍</span>
+            <input type="text" id="hq-search" placeholder="Tìm theo tên rủi ro, biện pháp, đơn vị..."
+              style="width:100%;padding:7px 10px 7px 30px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px"
+              oninput="filterHieuQua()">
+          </div>
+          <select id="hq-f-mucdo" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px" onchange="filterHieuQua()">
+            <option value="">Mức độ</option>
+            <option>Trọng yếu</option><option>Đáng kể</option><option>Trung bình</option><option>Thấp</option>
+          </select>
+          <select id="hq-f-tiendo" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px" onchange="filterHieuQua()">
+            <option value="">Tiến độ</option>
+            <option>Đã thực hiện</option><option>Đang thực hiện</option><option>Chưa đến hạn</option>
+            <option>Chưa thực hiện</option><option>Chưa hoàn thành</option><option>Không thể thực hiện</option>
+          </select>
+          <select id="hq-f-thietke" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px" onchange="filterHieuQua()">
+            <option value="">Thiết kế</option>
+            <option>Đầy đủ</option><option>Một phần</option><option>Không đầy đủ</option>
+          </select>
+          <select id="hq-f-vanhanh" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px" onchange="filterHieuQua()">
+            <option value="">Vận hành</option>
+            <option>Hiệu quả</option><option>Một phần</option><option>Không hiệu quả</option>
+          </select>
+          <select id="hq-f-hieuqua" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px" onchange="filterHieuQua()">
+            <option value="">Hiệu quả</option>
+            <option>Hiệu quả</option><option>Hiệu quả một phần</option><option>Không hiệu quả</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="clearHieuQuaFilter()" title="Xóa bộ lọc">✕ Xóa lọc</button>
+          <span id="hq-filter-count" style="font-size:12px;color:var(--text3)"></span>
+        </div>
+
+        <div class="fmea-card" style="padding:0;overflow-x:auto">
+          <table class="fmea-table" id="hq-table"></table>
+        </div>
+      </div>
+
+      <div id="tab-content-versions" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:20px;font-weight:700">Lịch sử phiên bản</div>
+            <div style="color:var(--text2);font-size:13px;margin-top:2px">Snapshot dữ liệu tại một thời điểm — dùng để so sánh sau này</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="importVersionJson()">⬆ Nhập bản sao lưu</button>
+            <button class="btn btn-success" onclick="saveVersion()">💾 Lưu phiên bản hiện tại</button>
+          </div>
+        </div>
+        <div id="versions-list"></div>
+      </div>
+
+      <div id="tab-content-compare" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div style="font-size:20px;font-weight:700">So sánh phiên bản</div>
+          <button class="btn btn-ghost btn-sm no-print" onclick="exportCompareReport()" id="btn-export-compare" style="display:none">⬇ Xuất báo cáo</button>
+        </div>
+        <div class="compare-grid">
+          <div><label>Phiên bản A (cũ hơn)</label><select id="compare-a" onchange="runCompare()" style="margin-top:4px"></select></div>
+          <div><label>Phiên bản B (mới hơn)</label><select id="compare-b" onchange="runCompare()" style="margin-top:4px"></select></div>
+        </div>
+        <div id="compare-result"></div>
+      </div>
+
+      <div id="tab-content-guide" style="display:none">
+        <div style="max-width:700px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:4px">Hướng dẫn dùng chung</div>
+          <div style="color:var(--text2);font-size:13px;margin-bottom:24px">App đã kết nối Supabase Cloud. Mọi người dùng chung 1 database thời gian thực.</div>
+
+          <div style="background:var(--green-bg);border:1px solid #1a4a38;border-radius:var(--radius-lg);padding:20px;margin-bottom:20px">
+            <div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:12px">✓ Supabase đã được kết nối</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);background:var(--surface2);padding:8px 12px;border-radius:var(--radius);margin-bottom:8px">pqceeqcutkphvmyqsmyt.supabase.co</div>
+            <div style="font-size:13px;color:var(--text2)">Dữ liệu được lưu tập trung — mọi người trong team dùng chung 1 bộ dữ liệu.</div>
+          </div>
+
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:16px">Quy trình dùng chung</div>
+            <div class="guide-step">
+              <div class="guide-num" style="background:var(--green);color:#000">1</div>
+              <div class="guide-content">
+                <h3>Chia sẻ file HTML cho team</h3>
+                <p>Gửi file <code style="background:var(--surface3);padding:1px 6px;border-radius:3px">quan-ly-rui-ro-v2.html</code> cho tất cả thành viên. Ai cũng mở bằng Chrome là dùng được — Supabase URL đã nhúng sẵn trong file.</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-num" style="background:var(--accent)">2</div>
+              <div class="guide-content">
+                <h3>Pull trước khi làm việc</h3>
+                <p>Mỗi lần mở app, nhấn <strong style="color:var(--green)">⬇ Pull</strong> để kéo dữ liệu mới nhất từ cloud về máy. App cũng tự Pull khi khởi động nếu có dữ liệu mới hơn.</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-num" style="background:var(--accent)">3</div>
+              <div class="guide-content">
+                <h3>Cập nhật & Push lên cloud</h3>
+                <p>Sau khi nhập liệu / sửa rủi ro xong, nhấn <strong style="color:var(--accent)">⬆ Push</strong> → đặt tên phiên bản → dữ liệu lên cloud ngay, mọi người Pull về là thấy.</p>
+              </div>
+            </div>
+            <div class="guide-step" style="margin-bottom:0">
+              <div class="guide-num" style="background:var(--purple)">4</div>
+              <div class="guide-content">
+                <h3>Lưu ý tránh xung đột</h3>
+                <p>Nên thống nhất: <em>1 người cập nhật 1 lúc</em>. Nếu 2 người cùng sửa rồi Push → người Push sau sẽ ghi đè người Push trước. Dùng tính năng <strong>So sánh phiên bản</strong> để kiểm tra nếu cần.</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px">Muốn đưa lên web để truy cập qua link?</div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Upload file lên <strong style="color:var(--text)">GitHub Pages</strong> (miễn phí) → cả team truy cập qua link, không cần gửi file:</div>
+            <div class="code-block">1. github.com → New repository → tên: risk-manager
+2. Upload file → đổi tên thành index.html
+3. Settings → Pages → Source: main → Save
+4. Link: https://tênbạn.github.io/risk-manager</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN TAB -->
+      <div id="tab-content-admin" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:20px;font-weight:700">⚙ Quản trị người dùng</div>
+            <div style="color:var(--text2);font-size:13px;margin-top:2px">Tạo tài khoản, phân quyền và gán đơn vị cho từng người dùng</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Thêm người dùng</button>
+        </div>
+        <div class="stats-grid" id="admin-stats"></div>
+        <div class="fmea-card" style="padding:0;overflow-x:auto;margin-top:16px">
+          <table class="admin-table" id="admin-user-table">
+            <tr><td style="padding:40px;text-align:center;color:var(--text3)">Đang tải...</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit User (Admin only) -->
+<div class="modal-overlay" id="user-modal" style="display:none" onclick="if(event.target===this)closeUserModal()">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title" id="user-modal-title">Thêm người dùng</div>
+      <button class="btn btn-icon btn-ghost" onclick="closeUserModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div><label>Họ tên</label><input type="text" id="u-hoten" placeholder="VD: Nguyễn Thị Hoa"></div>
+        <div><label>Email *</label><input type="email" id="u-email" placeholder="email@benhvien.com"></div>
+        <div id="u-password-wrap"><label>Mật khẩu *</label><input type="password" id="u-password" placeholder="Tối thiểu 6 ký tự"></div>
+        <div>
+          <label>Phân quyền</label>
+          <select id="u-role">
+            <option value="viewer">Viewer — Chỉ xem</option>
+            <option value="editor">Editor — Xem + Sửa</option>
+            <option value="admin">Admin — Toàn quyền</option>
+          </select>
+        </div>
+        <div><label>Đơn vị / Khoa phòng</label><input type="text" id="u-donvi" placeholder="VD: Khoa Dược, Phòng Điều dưỡng..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeUserModal()">Hủy</button>
+      <button class="btn btn-primary" id="u-save-btn" onclick="saveUser()">Tạo tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit Risk -->
+<div class="modal-overlay" id="risk-modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Thêm rủi ro mới</div>
+      <button class="btn btn-icon btn-ghost" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="risk-form">
+        <div class="form-grid">
+          <div class="section-title">THÔNG TIN CƠ BẢN</div>
+          <div class="form-row">
+            <div>
+              <label>Loại rủi ro *</label>
+              <select id="f-loai" required>
+                <option value="">-- Chọn --</option>
+                <option>Rủi ro chuyên môn</option><option>Rủi ro hoạt động</option>
+                <option>Rủi ro tuân thủ</option><option>Rủi ro tài chính</option>
+                <option>Rủi ro CNTT</option><option>Rủi ro danh tiếng</option>
+                <option>Rủi ro chiến lược</option>
+              </select>
+            </div>
+            <div><label>Tên rủi ro *</label><input type="text" id="f-ten" required placeholder="VD: Sai sót y khoa"></div>
+          </div>
+          <div><label>Mô tả rủi ro</label><textarea id="f-mota"></textarea></div>
+          <div class="form-row">
+            <div><label>Nguyên nhân</label><textarea id="f-nguyen" style="min-height:60px"></textarea></div>
+            <div><label>Ảnh hưởng</label><textarea id="f-anhhuo" style="min-height:60px"></textarea></div>
+          </div>
+          <div><label>Đơn vị quản lý</label><input type="text" id="f-donvi" placeholder="VD: Phòng điều dưỡng"></div>
+          <div class="section-title" style="margin-top:8px">ĐÁNH GIÁ RỦI RO HIỆN TẠI</div>
+          <div class="form-row-3">
+            <div><label>Khả năng xảy ra</label><select id="f-kn" onchange="autoCalcMucDo()"><option value="">--</option><option>Rất khó xảy ra</option><option>Khó xảy ra</option><option>Có thể</option><option>Rất có thể</option><option>Gần như chắc chắn</option></select></div>
+            <div><label>Ảnh hưởng</label><select id="f-tacdong" onchange="autoCalcMucDo()"><option value="">--</option><option>Rất cao</option><option>Cao</option><option>Trung bình</option><option>Thấp</option><option>Rất thấp</option></select></div>
+            <div>
+              <label>Mức độ rủi ro <span style="font-size:10px;color:var(--text3)">(tự tính)</span></label>
+              <div id="f-mucdo-display" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-weight:700;font-size:13px;min-height:36px">—</div>
+              <input type="hidden" id="f-mucdo">
+            </div>
+          </div>
+          <div><label>Xu hướng</label><select id="f-xuhuong"><option value="">--</option><option>Tăng</option><option>Ổn định</option><option>Giảm</option></select></div>
+          <div><label>Hoạt động kiểm soát hiện tại</label><textarea id="f-hoatdong"></textarea></div>
+          <div class="section-title" style="margin-top:8px">SAU KIỂM SOÁT</div>
+          <div class="form-row-3">
+            <div><label>Khả năng xảy ra (sau KS)</label><select id="f-kn2" onchange="autoCalcMucDo()"><option value="">--</option><option>Rất khó xảy ra</option><option>Khó xảy ra</option><option>Có thể</option><option>Rất có thể</option><option>Gần như chắc chắn</option></select></div>
+            <div><label>Ảnh hưởng (sau KS)</label><select id="f-tacdong2" onchange="autoCalcMucDo()"><option value="">--</option><option>Rất cao</option><option>Cao</option><option>Trung bình</option><option>Thấp</option><option>Rất thấp</option></select></div>
+            <div>
+              <label>Mức độ rủi ro (sau KS) <span style="font-size:10px;color:var(--text3)">(tự tính)</span></label>
+              <div id="f-mucdo2-display" style="padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-weight:700;font-size:13px;min-height:36px">—</div>
+              <input type="hidden" id="f-mucdo2">
+            </div>
+          </div>
+        </div>
+        <div class="section-title" style="margin-top:20px">BIỆN PHÁP GIẢM THIỂU HƯỚNG TỚI TƯƠNG LAI</div>
+        <div id="measures-list"></div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addMeasure()" style="margin-top:8px">+ Thêm biện pháp</button>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveRisk()">Lưu rủi ro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Import -->
+<div class="modal-overlay" id="import-modal" style="display:none" onclick="if(event.target===this)closeImport()">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-header">
+      <div class="modal-title">Import từ file Excel</div>
+      <button class="btn btn-icon btn-ghost" onclick="closeImport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="import-drop-zone" class="drop-zone" onclick="document.getElementById('import-file-input').click()" ondrop="handleDrop(event)" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')">
+        <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileSelect(event)">
+        <div class="drop-zone-icon">📂</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">Kéo thả file Excel vào đây</div>
+        <div style="color:var(--text2);font-size:13px">hoặc nhấn để chọn file .xlsx từ máy tính</div>
+        <div style="color:var(--text3);font-size:12px;margin-top:8px">Hỗ trợ file gốc "Danh mục rủi ro" — tự động đọc cấu trúc cột</div>
+      </div>
+      <div id="import-preview"></div>
+    </div>
+    <div class="modal-footer" id="import-footer" style="display:none">
+      <div style="flex:1;font-size:13px;color:var(--text2)" id="import-summary"></div>
+      <button class="btn btn-ghost" onclick="closeImport()">Hủy</button>
+      <button class="btn btn-danger btn-sm" onclick="importData('replace')">Xóa hết & Nhập mới</button>
+      <button class="btn btn-primary" onclick="importData('merge')">Nhập & Gộp vào hiện có</button>
+    </div>
+  </div>
+</div>
+
+<!-- FMEA MODAL -->
+<div class="modal-overlay" id="fmea-modal" style="display:none" onclick="if(event.target===this)closeFmeaModal()">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div class="modal-title" id="fmea-modal-title">Thêm mục FMEA</div>
+      <button class="btn btn-icon btn-ghost" onclick="closeFmeaModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div>
+          <label>Quy trình / Công việc</label>
+          <input type="text" id="fm-process" placeholder="VD: Cấp phát thuốc cho người bệnh nội trú">
+        </div>
+        <div>
+          <label>Hình thức sai lỗi (Failure Mode)</label>
+          <input type="text" id="fm-mode" placeholder="VD: Cấp nhầm thuốc / nhầm liều">
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Ảnh hưởng (Effect)</label>
+            <textarea id="fm-effect" placeholder="Hậu quả nếu sai lỗi xảy ra"></textarea>
+          </div>
+          <div>
+            <label>Nguyên nhân (Cause)</label>
+            <textarea id="fm-cause" placeholder="Nguyên nhân gốc có thể dẫn đến sai lỗi"></textarea>
+          </div>
+        </div>
+        <div>
+          <label>Biện pháp kiểm soát hiện tại</label>
+          <textarea id="fm-control" placeholder="Các kiểm soát / rào chắn hiện đang áp dụng"></textarea>
+        </div>
+        <div class="form-row-3">
+          <div>
+            <label>S — Mức nghiêm trọng (1–10)</label>
+            <input type="number" id="fm-s" class="sod-input" min="1" max="10" value="5" oninput="updateFmeaRpnPreview()" style="width:100%">
+          </div>
+          <div>
+            <label>O — Khả năng xảy ra (1–10)</label>
+            <input type="number" id="fm-o" class="sod-input" min="1" max="10" value="5" oninput="updateFmeaRpnPreview()" style="width:100%">
+          </div>
+          <div>
+            <label>D — Khả năng phát hiện (1–10)</label>
+            <input type="number" id="fm-d" class="sod-input" min="1" max="10" value="5" oninput="updateFmeaRpnPreview()" style="width:100%">
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">
+          <span style="font-size:12px;color:var(--text2);font-weight:600">RPN (S×O×D)</span>
+          <span id="fmea-rpn-preview" class="rpn-badge rpn-acceptable">125</span>
+          <span id="fmea-rpn-preview-label" style="font-size:12px;color:var(--text2)"></span>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Đơn vị quản lý</label>
+            <input type="text" id="fm-donvi" placeholder="VD: Khoa Dược">
+          </div>
+          <div>
+            <label>Hành động đề xuất</label>
+            <input type="text" id="fm-action" placeholder="VD: Áp dụng quy trình đối chiếu chéo">
+          </div>
+          <div>
+            <label>Tiến độ hành động</label>
+            <select id="fm-status">
+              <option value="">-- Chọn --</option>
+              <option>Đã thực hiện</option>
+              <option>Đang thực hiện</option>
+              <option>Chưa đến hạn</option>
+              <option>Chưa thực hiện</option>
+              <option>Chưa hoàn thành</option>
+              <option>Không thể thực hiện</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeFmeaModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveFmea()">Lưu mục FMEA</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD DRILLDOWN MODAL -->
+<div class="modal-overlay" id="drill-modal" style="display:none" onclick="if(event.target===this)closeDrillModal()">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="drill-title">Chi tiết</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px" id="drill-subtitle"></div>
+      </div>
+      <button class="btn btn-icon btn-ghost" onclick="closeDrillModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:60vh;overflow-y:auto" id="drill-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDrillModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+<input type="file" id="json-import-input" accept=".json" style="display:none" onchange="handleJsonImport(event)">
+
+<script>
+// ═══ STATE ═══
+const STORAGE_KEY = 'riskapp_v2';
+let state = { risks:[], versions:[], fmeaItems:[], nextId:1, nextFmeaId:1, editingId:null, editingFmeaId:null, selectedId:null, currentTab:'list', gasUrl:'' };
+let importBuffer = [];
+let modalMeasures = [];
+
+function loadState() {
+  try { const s=localStorage.getItem(STORAGE_KEY); if(s) state={...state,...JSON.parse(s)}; } catch(e){}
+  if(!Array.isArray(state.fmeaItems)) state.fmeaItems=[];
+  if(!state.nextFmeaId) state.nextFmeaId = state.fmeaItems.length ? Math.max(...state.fmeaItems.map(f=>f.id||0))+1 : 1;
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+// ═══ HELPERS ═══
+const LOAI_COLORS = {
+  'Rủi ro chuyên môn':['#4f7cff','#0f1829'],'Rủi ro hoạt động':['#2dd4a0','#0d2219'],
+  'Rủi ro tuân thủ':['#f5a623','#251a07'],'Rủi ro tài chính':['#ff5e6a','#250a0c'],
+  'Rủi ro CNTT':['#b57aff','#1e1230'],'Rủi ro danh tiếng':['#22d3ee','#071a20'],
+  'Rủi ro chiến lược':['#f472b6','#1a0a14'],
+};
+function loaiColor(l){ return LOAI_COLORS[l]||['#8b90a8','#1c202c']; }
+function badgeClass(md){
+  if(!md) return '';
+  const m=md.toLowerCase();
+  if(m.includes('trọng yếu')) return 'badge-trongyeu';
+  if(m.includes('đáng kể')) return 'badge-dangke';
+  if(m.includes('trung bình')) return 'badge-trungbinh';
+  if(m.includes('thấp')) return 'badge-thap';
+  return '';
+}
+function fmtDate(ts){ if(!ts) return ''; return new Date(ts).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function toast(msg,type='success'){
+  const tc=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className=`toast toast-${type}`;
+  t.innerHTML=`<span>${type==='success'?'✓':'⚠'}</span> ${msg}`;
+  tc.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+function norm(s){ return s?String(s).trim():'';}
+
+// ═══ TABS ═══
+function switchTab(tab){
+  state.currentTab=tab;
+  ['dashboard','list','fmea','hieuqua','versions','compare','guide','admin'].forEach(t=>{
+    const btn=document.getElementById(`tab-${t}`);
+    const content=document.getElementById(`tab-content-${t}`);
+    if(btn) btn.classList.toggle('active',t===tab);
+    if(content) content.style.display=t===tab?'':'none';
+  });
+  document.getElementById('sidebar').style.display=tab==='list'?'':'none';
+  if(tab==='versions') renderVersions();
+  if(tab==='compare') renderCompareSelects();
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='fmea') renderFmea();
+  if(tab==='hieuqua') renderHieuQua();
+  if(tab==='admin') renderAdminTab();
+}
+
+// ═══ SIDEBAR STATS ═══
+function renderSidebarStats(){
+  const r=state.risks;
+  const el=document.getElementById('sidebar-stats');
+  if(!r.length){el.innerHTML='';return;}
+  const ty=r.filter(x=>x.mucdo?.toLowerCase().includes('trọng yếu')).length;
+  const dk=r.filter(x=>x.mucdo?.toLowerCase().includes('đáng kể')).length;
+  const tb=r.filter(x=>x.mucdo?.toLowerCase().includes('trung bình')).length;
+  const t=r.filter(x=>x.mucdo?.toLowerCase().includes('thấp')).length;
+  el.innerHTML=`<div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Tổng quan (${r.length})</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
+      <div style="display:flex;justify-content:space-between"><span style="color:#ff5e6a">Trọng yếu</span><strong>${ty}</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#f5a623">Đáng kể</span><strong>${dk}</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#86c946">Trung bình</span><strong>${tb}</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#38b2d4">Thấp</span><strong>${t}</strong></div>
+    </div>`;
+}
+
+// ═══ RISK LIST ═══
+function renderList(){
+  renderSidebarStats();
+  const q=document.getElementById('search-input').value.toLowerCase();
+  const fl=document.getElementById('filter-loai').value;
+  const fm=document.getElementById('filter-mucdo').value;
+  let risks=state.risks.filter(r=>{
+    if(fl&&r.loai!==fl) return false;
+    if(fm&&!r.mucdo?.toLowerCase().includes(fm.toLowerCase())) return false;
+    if(q&&!r.ten?.toLowerCase().includes(q)&&!r.mota?.toLowerCase().includes(q)&&!r.donvi?.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const el=document.getElementById('risk-list');
+  if(!risks.length){el.innerHTML=`<div style="text-align:center;padding:24px 0;color:var(--text3);font-size:12px">${state.risks.length?'Không tìm thấy kết quả':'Chưa có rủi ro — nhấn Import để bắt đầu'}</div>`;return;}
+  el.innerHTML=risks.map(r=>{
+    const sel=r.id===state.selectedId;
+    return `<div class="risk-item${sel?' selected':''}" data-id="${r.id}" onclick="selectRisk(${r.id})">
+      <div class="risk-stt">#${r.stt}</div>
+      <div class="risk-body">
+        <div class="risk-name">${r.ten||'(chưa đặt tên)'}</div>
+        <div class="risk-sub">${r.donvi||'—'}</div>
+      </div>
+      <div class="risk-meta">
+        ${r.mucdo?`<span class="badge ${badgeClass(r.mucdo)}" style="font-size:10px">${r.mucdo}</span>`:''}
+        <span style="font-size:10px;color:var(--text3)">${r.measures?.length||0} BP</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectRisk(id){ state.selectedId=id; renderList(); renderDetail(); }
+
+// ═══ DETAIL ═══
+function renderDetail(){
+  const r=state.risks.find(x=>x.id===state.selectedId);
+  document.getElementById('detail-empty').style.display=r?'none':'';
+  const panel=document.getElementById('detail-panel');
+  panel.style.display=r?'':'none';
+  if(!r) return;
+  const [c,bg]=loaiColor(r.loai);
+  const done=(r.measures||[]).filter(m=>m.tiendo==='Đã thực hiện').length;
+  const total=(r.measures||[]).length;
+  const pct=total?Math.round(done/total*100):0;
+  panel.innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="background:${bg};color:${c};padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;border:1px solid ${c}44">${r.loai||'—'}</span>
+          ${r.mucdo?`<span class="badge ${badgeClass(r.mucdo)}">${r.mucdo}</span>`:''}
+          ${r.xuhuong?`<span style="font-size:11px;color:var(--text3)">${{'Tăng':'↑','Giảm':'↓','Ổn định':'→'}[r.xuhuong]||''} ${r.xuhuong}</span>`:''}
+        </div>
+        <div style="font-size:22px;font-weight:700;margin-bottom:4px">${r.ten||'—'}</div>
+        <div style="color:var(--text2);font-size:13px">${r.donvi||'—'}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal(${r.id})">✏ Sửa</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRisk(${r.id})">✕</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      ${ib('Mô tả rủi ro',r.mota)} ${ib('Nguyên nhân',r.nguyen)}
+      ${ib('Ảnh hưởng',r.anhhuo)} ${ib('Đơn vị quản lý',r.donvi)}
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+      <div class="section-title" style="margin-bottom:10px">ĐÁNH GIÁ RỦI RO</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border-radius:6px;overflow:hidden;border:1px solid var(--border)">
+        ${ec('Khả năng xảy ra',r.kn,'Sau KS',r.kn2)}
+        ${ec('Tác động',r.tacdong,'Sau KS',r.tacdong2)}
+        ${ec('Mức độ',r.mucdo,'Sau KS',r.mucdo2,true)}
+      </div>
+    </div>
+    ${r.hoatdong?`<div style="margin-bottom:16px">${ib('Hoạt động kiểm soát',r.hoatdong)}</div>`:''}
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700">Biện pháp giảm thiểu (${total})</div>
+        <div style="font-size:12px;color:var(--green);display:flex;align-items:center;gap:8px">
+          ${done}/${total} hoàn thành ${total?`(${pct}%)`:''}
+          <div class="progress-bar" style="width:80px;display:inline-block"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      ${(r.measures||[]).map(mc).join('')||'<div style="color:var(--text3);font-size:12px">Chưa có biện pháp</div>'}
+    </div>`;
+}
+
+function ib(lbl,val){return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">${lbl}</div><div style="font-size:13px;color:${val?'var(--text)':'var(--text3)'}">${val||'—'}</div></div>`;}
+function ec(l1,v1,l2,v2,bold=false){return `<div style="padding:10px 14px;border-right:1px solid var(--border);background:var(--surface)"><div style="font-size:10px;color:var(--text3);margin-bottom:2px">${l1}</div><div style="font-size:13px;${bold?'font-weight:700;':''}color:var(--text)">${v1||'—'}</div><div style="height:1px;background:var(--border);margin:8px 0"></div><div style="font-size:10px;color:var(--text3);margin-bottom:2px">${l2}</div><div style="font-size:12px;${bold?'font-weight:700;':''}color:var(--text2)">${v2||'—'}</div></div>`;}
+function mc(m){
+  const sc={'Đã thực hiện':'var(--teal)','Đang thực hiện':'var(--accent)','Chưa đến hạn':'var(--text2)','Chưa thực hiện':'var(--amber)','Chưa hoàn thành':'var(--red)','Không thể thực hiện':'var(--text3)'}[m.tiendo]||'var(--text3)';
+  const hq = m.hieuqua || calcHieuQua(m.thietke, m.vanhanh);
+  const hqColor = HQ_COLORS[hq]||'var(--text3)';
+  return `<div class="measure-item">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      <div style="font-size:13px;flex:1">${m.bienphap||'—'}</div>
+      <div style="flex-shrink:0;text-align:right">
+        <div style="font-size:11px;color:${sc};font-weight:600">${m.tiendo||''}</div>
+        <div style="font-size:10px;color:var(--text3)">${m.thoihan||''}</div>
+      </div>
+    </div>
+    ${m.donvi?`<div style="font-size:11px;color:var(--text3);margin-top:4px">ĐV: ${m.donvi}</div>`:''}
+    ${(m.thietke||m.vanhanh)?`<div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+      ${m.thietke?`<div style="font-size:11px"><span style="color:var(--text3)">Thiết kế:</span> <span style="color:var(--text2)">${m.thietke}</span></div>`:''}
+      ${m.vanhanh?`<div style="font-size:11px"><span style="color:var(--text3)">Vận hành:</span> <span style="color:var(--text2)">${m.vanhanh}</span></div>`:''}
+      ${hq?`<div style="font-size:11px"><span style="color:var(--text3)">Hiệu quả:</span> <span style="font-weight:700;color:${hqColor}">${hq}</span></div>`:''}
+    </div>`:''}
+    ${m.hoatdongtiep?`<div style="font-size:11px;color:var(--text2);margin-top:4px">▸ ${m.hoatdongtiep}</div>`:''}
+  </div>`;
+}
+
+// ═══ MODAL ADD/EDIT ═══
+function openAddModal(){
+  state.editingId=null; modalMeasures=[];
+  document.getElementById('modal-title').textContent='Thêm rủi ro mới';
+  document.getElementById('risk-form').reset();
+  renderModalMeasures();
+  document.getElementById('risk-modal').style.display='flex';
+}
+function openEditModal(id){
+  const r=state.risks.find(x=>x.id===id); if(!r) return;
+  state.editingId=id; modalMeasures=JSON.parse(JSON.stringify(r.measures||[]));
+  document.getElementById('modal-title').textContent='Chỉnh sửa rủi ro';
+  const flds={'f-loai':r.loai,'f-ten':r.ten,'f-mota':r.mota,'f-nguyen':r.nguyen,'f-anhhuo':r.anhhuo,'f-donvi':r.donvi,'f-kn':r.kn,'f-tacdong':r.tacdong,'f-xuhuong':r.xuhuong,'f-hoatdong':r.hoatdong,'f-kn2':r.kn2,'f-tacdong2':r.tacdong2};
+  Object.entries(flds).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||'';});
+  const md1=calcMucDo(r.kn,r.tacdong)||r.mucdo||'';
+  const md2=calcMucDo(r.kn2,r.tacdong2)||r.mucdo2||'';
+  setMucDoDisplay('f-mucdo-display','f-mucdo',md1);
+  setMucDoDisplay('f-mucdo2-display','f-mucdo2',md2);
+  renderModalMeasures();
+  document.getElementById('risk-modal').style.display='flex';
+}
+function closeModal(){ document.getElementById('risk-modal').style.display='none'; }
+function addMeasure(){ modalMeasures.push({bienphap:'',donvi:'',thoihan:'',tiendo:''}); renderModalMeasures(); }
+function removeMeasure(i){ modalMeasures.splice(i,1); renderModalMeasures(); }
+function renderModalMeasures(){
+  document.getElementById('measures-list').innerHTML=modalMeasures.map((m,i)=>`
+    <div class="measure-item" style="margin-bottom:8px">
+      <div style="display:grid;gap:8px">
+        <div><label>Nội dung biện pháp</label><textarea style="min-height:56px" onchange="modalMeasures[${i}].bienphap=this.value">${m.bienphap||''}</textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div><label>Đơn vị thực hiện</label><input type="text" value="${m.donvi||''}" onchange="modalMeasures[${i}].donvi=this.value"></div>
+          <div><label>Thời hạn</label><input type="text" value="${m.thoihan||''}" placeholder="VD: 12/2025" onchange="modalMeasures[${i}].thoihan=this.value"></div>
+          <div><label>Đánh giá tiến độ</label>
+            <select onchange="modalMeasures[${i}].tiendo=this.value">
+              <option value="" ${!m.tiendo?'selected':''}>-- Chọn --</option>
+              <option ${m.tiendo==='Đã thực hiện'?'selected':''}>Đã thực hiện</option>
+              <option ${m.tiendo==='Đang thực hiện'?'selected':''}>Đang thực hiện</option>
+              <option ${m.tiendo==='Chưa đến hạn'?'selected':''}>Chưa đến hạn</option>
+              <option ${m.tiendo==='Chưa thực hiện'?'selected':''}>Chưa thực hiện</option>
+              <option ${m.tiendo==='Chưa hoàn thành'?'selected':''}>Chưa hoàn thành</option>
+              <option ${m.tiendo==='Không thể thực hiện'?'selected':''}>Không thể thực hiện</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto 1fr;gap:8px;align-items:end">
+          <div><label>Thiết kế biện pháp</label>
+            <select onchange="modalMeasures[${i}].thietke=this.value;updateHieuQua(${i})">
+              <option value="" ${!m.thietke?'selected':''}>-- Chọn --</option>
+              <option ${m.thietke==='Đầy đủ'?'selected':''}>Đầy đủ</option>
+              <option ${m.thietke==='Một phần'?'selected':''}>Một phần</option>
+              <option ${m.thietke==='Không đầy đủ'?'selected':''}>Không đầy đủ</option>
+            </select>
+          </div>
+          <div><label>Vận hành biện pháp</label>
+            <select onchange="modalMeasures[${i}].vanhanh=this.value;updateHieuQua(${i})">
+              <option value="" ${!m.vanhanh?'selected':''}>-- Chọn --</option>
+              <option ${m.vanhanh==='Hiệu quả'?'selected':''}>Hiệu quả</option>
+              <option ${m.vanhanh==='Một phần'?'selected':''}>Một phần</option>
+              <option ${m.vanhanh==='Không hiệu quả'?'selected':''}>Không hiệu quả</option>
+            </select>
+          </div>
+          <div>
+            <label>Hiệu quả <span style="font-size:10px;color:var(--text3)">(tự tính)</span></label>
+            <div id="hq-preview-${i}" style="padding:7px 12px;border-radius:var(--radius);font-weight:700;font-size:12px;border:1px solid var(--border);min-width:130px">${calcHieuQua(m.thietke,m.vanhanh)||'—'}</div>
+          </div>
+          <div><label>Hoạt động tiếp theo</label>
+            <input type="text" value="${m.hoatdongtiep||''}" placeholder="VD: Tiếp tục duy trì..." onchange="modalMeasures[${i}].hoatdongtiep=this.value">
+          </div>
+        </div>
+      </div>
+      <button type="button" onclick="removeMeasure(${i})" style="position:absolute;top:8px;right:8px;background:var(--red-bg);color:var(--red);border:none;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:13px">✕</button>
+    </div>`).join('');
+}
+function saveRisk(){
+  const ten=document.getElementById('f-ten').value.trim();
+  if(!ten){toast('Vui lòng nhập tên rủi ro','error');return;}
+  document.querySelectorAll('#measures-list textarea').forEach((el,idx)=>{if(modalMeasures[idx])modalMeasures[idx].bienphap=el.value;});
+  const data={loai:document.getElementById('f-loai').value,ten,mota:document.getElementById('f-mota').value,nguyen:document.getElementById('f-nguyen').value,anhhuo:document.getElementById('f-anhhuo').value,donvi:document.getElementById('f-donvi').value,kn:document.getElementById('f-kn').value,tacdong:document.getElementById('f-tacdong').value,mucdo:document.getElementById('f-mucdo').value,xuhuong:document.getElementById('f-xuhuong').value,hoatdong:document.getElementById('f-hoatdong').value,kn2:document.getElementById('f-kn2').value,tacdong2:document.getElementById('f-tacdong2').value,mucdo2:document.getElementById('f-mucdo2').value,measures:JSON.parse(JSON.stringify(modalMeasures))};
+  if(state.editingId){
+    const idx=state.risks.findIndex(r=>r.id===state.editingId);
+    if(idx>=0) state.risks[idx]={...state.risks[idx],...data};
+    toast('Đã cập nhật rủi ro');
+  } else {
+    const stt=state.risks.length?Math.max(...state.risks.map(r=>r.stt||0))+1:1;
+    state.risks.push({id:state.nextId++,stt,...data});
+    state.selectedId=state.nextId-1;
+    toast('Đã thêm rủi ro mới');
+  }
+  saveState(); closeModal(); renderList(); renderDetail();
+  sbSet('risks', state.risks).catch(()=>{});
+}
+function deleteRisk(id){
+  if(!confirm('Xác nhận xóa rủi ro này?')) return;
+  state.risks=state.risks.filter(r=>r.id!==id); state.selectedId=null;
+  saveState(); renderList(); renderDetail(); toast('Đã xóa rủi ro');
+  sbSet('risks', state.risks).catch(()=>{});
+}
+
+// ═══ IMPORT XLSX ═══
+function openImportModal(){ importBuffer=[]; document.getElementById('import-preview').innerHTML=''; document.getElementById('import-footer').style.display='none'; document.getElementById('import-modal').style.display='flex'; }
+function closeImport(){ document.getElementById('import-modal').style.display='none'; }
+function handleDrop(e){ e.preventDefault(); document.getElementById('import-drop-zone').classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) readXlsxFile(f); }
+function handleFileSelect(e){ const f=e.target.files[0]; if(f) readXlsxFile(f); e.target.value=''; }
+
+function readXlsxFile(file){
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      parseXlsxRows(raw);
+    }catch(err){ toast('Lỗi đọc file: '+err.message,'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseXlsxRows(rows){
+  // Find data start: row with STT=1 (skip header rows)
+  let dataStart=-1;
+  for(let i=0;i<rows.length;i++){
+    const v=rows[i][0];
+    if(v===1||v==='1') { dataStart=i; break; }
+  }
+  if(dataStart<0){ toast('Không tìm thấy dữ liệu — kiểm tra lại file','error'); return; }
+
+  importBuffer=[];
+  let currentRisk=null;
+  let sttCounter=0;
+
+  for(let i=dataStart;i<rows.length;i++){
+    const row=rows[i];
+    const sttVal=row[0];
+    const isAnchor = sttVal!==''&&sttVal!==null&&!isNaN(Number(sttVal))&&Number(sttVal)>0;
+
+    if(isAnchor){
+      sttCounter++;
+      currentRisk={
+        id: Date.now()+sttCounter,
+        stt: Number(sttVal),
+        loai: normLoai(norm(row[1])),
+        ten: norm(row[2]),
+        mota: norm(row[3]),
+        nguyen: norm(row[4]),
+        anhhuo: norm(row[5]),
+        donvi: norm(row[6]),
+        kn: norm(row[7]),
+        tacdong: norm(row[8]),
+        mucdo: norm(row[9]),
+        xuhuong: norm(row[10]),
+        hoatdong: norm(row[11]),
+        kn2: norm(row[12]),
+        tacdong2: norm(row[13]),
+        mucdo2: norm(row[14]),
+        measures:[]
+      };
+      importBuffer.push(currentRisk);
+    }
+
+    // Biện pháp (col P = index 15)
+    if(currentRisk && norm(row[15])){
+      currentRisk.measures.push({
+        bienphap: norm(row[15]),
+        donvi: norm(row[16]),
+        thoihan: fmtThoiHan(row[17]),
+        tiendo: norm(row[18])
+      });
+    }
+  }
+
+  showImportPreview();
+}
+
+function normLoai(s){
+  if(!s) return s;
+  const l=s.toLowerCase();
+  if(l.includes('chuyên môn')) return 'Rủi ro chuyên môn';
+  if(l.includes('hoạt động')) return 'Rủi ro hoạt động';
+  if(l.includes('tuân thủ')) return 'Rủi ro tuân thủ';
+  if(l.includes('tài chính')) return 'Rủi ro tài chính';
+  if(l.includes('cntt')) return 'Rủi ro CNTT';
+  if(l.includes('danh tiếng')) return 'Rủi ro danh tiếng';
+  if(l.includes('chiến lược')) return 'Rủi ro chiến lược';
+  return s;
+}
+
+function fmtThoiHan(v){
+  if(!v&&v!==0) return '';
+  const s=String(v).trim();
+  if(s===''||s==='NaN') return '';
+  // Excel date serial
+  const n=Number(s);
+  if(!isNaN(n)&&n>40000&&n<60000){
+    try{
+      const d=new Date(Math.round((n-25569)*86400*1000));
+      return `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    }catch(e){}
+  }
+  return s;
+}
+
+function showImportPreview(){
+  const n=importBuffer.length;
+  const totalBP=importBuffer.reduce((a,r)=>a+(r.measures?.length||0),0);
+  document.getElementById('import-summary').textContent=`Đọc được ${n} rủi ro, ${totalBP} biện pháp`;
+  document.getElementById('import-footer').style.display='flex';
+
+  const preview=importBuffer.slice(0,8);
+  document.getElementById('import-preview').innerHTML=`
+    <div style="margin-top:16px;font-size:12px;color:var(--text2);margin-bottom:8px">Xem trước ${Math.min(8,n)}/${n} rủi ro đầu tiên:</div>
+    <div style="overflow-x:auto">
+    <table class="import-table">
+      <thead><tr><th>STT</th><th>Loại</th><th>Tên rủi ro</th><th>Đơn vị</th><th>Mức độ</th><th>BP</th></tr></thead>
+      <tbody>${preview.map(r=>`<tr>
+        <td style="font-family:'JetBrains Mono',monospace">#${r.stt}</td>
+        <td><span style="font-size:10px;color:${loaiColor(r.loai)[0]}">${r.loai||'—'}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ten||'—'}</td>
+        <td>${r.donvi||'—'}</td>
+        <td><span class="badge ${badgeClass(r.mucdo)}" style="font-size:10px">${r.mucdo||'—'}</span></td>
+        <td style="text-align:center">${r.measures?.length||0}</td>
+      </tr>`).join('')}
+      ${n>8?`<tr><td colspan="6" style="text-align:center;color:var(--text3);font-style:italic">... và ${n-8} rủi ro khác</td></tr>`:''}
+      </tbody>
+    </table></div>`;
+}
+
+function importData(mode){
+  if(!importBuffer.length){toast('Không có dữ liệu để nhập','error');return;}
+  if(mode==='replace'){
+    state.risks=importBuffer;
+    state.nextId=Math.max(...importBuffer.map(r=>r.id))+1;
+    toast(`Đã nhập ${importBuffer.length} rủi ro (thay thế hoàn toàn)`);
+  } else {
+    // Merge: add only risks with new STT
+    const existingStts=new Set(state.risks.map(r=>r.stt));
+    const toAdd=importBuffer.filter(r=>!existingStts.has(r.stt));
+    const toUpdate=importBuffer.filter(r=>existingStts.has(r.stt));
+    // update existing
+    toUpdate.forEach(nr=>{ const idx=state.risks.findIndex(r=>r.stt===nr.stt); if(idx>=0) state.risks[idx]={...state.risks[idx],...nr,id:state.risks[idx].id}; });
+    state.risks.push(...toAdd);
+    state.risks.sort((a,b)=>(a.stt||0)-(b.stt||0));
+    state.nextId=Math.max(...state.risks.map(r=>r.id))+1;
+    toast(`Đã gộp: +${toAdd.length} mới, cập nhật ${toUpdate.length} có sẵn`);
+  }
+  saveState(); closeImport(); renderList(); renderDetail();
+}
+
+// ═══ VERSIONS ═══
+function saveVersion(){
+  const label=prompt('Đặt tên phiên bản:',`Cập nhật ${new Date().toLocaleDateString('vi-VN')}`);
+  if(!label) return;
+  state.versions.push({id:Date.now(),label,ts:Date.now(),risks:JSON.parse(JSON.stringify(state.risks))});
+  saveState(); renderVersions(); toast(`Đã lưu phiên bản: ${label}`);
+}
+
+function renderVersions(){
+  const el=document.getElementById('versions-list');
+  if(!state.versions.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">📦</div><div>Chưa có phiên bản nào</div></div>`; return; }
+  el.innerHTML=state.versions.slice().reverse().map(v=>`
+    <div class="version-item">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span class="version-dot"></span><span style="font-weight:700">${v.label}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text3)">${fmtDate(v.ts)} · ${v.risks.length} rủi ro · ${v.risks.reduce((a,r)=>a+(r.measures?.length||0),0)} biện pháp</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success btn-sm" onclick="exportVersionJson(${v.id})">⬇ JSON</button>
+          <button class="btn btn-ghost btn-sm" onclick="restoreVersion(${v.id})">⟳ Khôi phục</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVersion(${v.id})">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function exportVersionJson(id){
+  const v=state.versions.find(x=>x.id===id); if(!v) return;
+  const blob=new Blob([JSON.stringify({version:v,allVersions:state.versions},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`riskapp_${v.label.replace(/[^a-z0-9]/gi,'_')}_${new Date(v.ts).toISOString().slice(0,10)}.json`;
+  a.click(); toast('Đã xuất file JSON');
+}
+
+function importVersionJson(){ document.getElementById('json-import-input').click(); }
+
+function handleJsonImport(e){
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(data.allVersions){
+        // Merge versions
+        const existingIds=new Set(state.versions.map(v=>v.id));
+        const toAdd=data.allVersions.filter(v=>!existingIds.has(v.id));
+        state.versions.push(...toAdd);
+        // Also restore risks from latest version in file
+        if(data.version){ state.risks=data.version.risks; state.nextId=Math.max(...state.risks.map(r=>r.id||0),0)+1; }
+        saveState(); renderVersions(); renderList(); renderDetail();
+        toast(`Đã nhập: +${toAdd.length} phiên bản, khôi phục dữ liệu từ "${data.version?.label||'file'}"`);
+      } else { toast('File JSON không hợp lệ','error'); }
+    }catch(err){ toast('Lỗi đọc JSON: '+err.message,'error'); }
+  };
+  reader.readAsText(f); e.target.value='';
+}
+
+function restoreVersion(id){
+  const v=state.versions.find(x=>x.id===id); if(!v) return;
+  if(!confirm(`Khôi phục dữ liệu về phiên bản "${v.label}"?\nDữ liệu hiện tại sẽ bị thay thế.`)) return;
+  state.risks=JSON.parse(JSON.stringify(v.risks));
+  state.nextId=Math.max(...state.risks.map(r=>r.id||0),0)+1;
+  state.selectedId=null;
+  saveState(); renderList(); renderDetail(); toast(`Đã khôi phục: ${v.label}`);
+}
+
+function deleteVersion(id){
+  if(!confirm('Xóa phiên bản này?')) return;
+  state.versions=state.versions.filter(v=>v.id!==id);
+  saveState(); renderVersions();
+}
+
+// ═══ COMPARE ═══
+let lastCompareResult=null;
+
+function renderCompareSelects(){
+  const opts=state.versions.map(v=>`<option value="${v.id}">${v.label} (${new Date(v.ts).toLocaleDateString('vi-VN')})</option>`).join('');
+  document.getElementById('compare-a').innerHTML=`<option value="">-- Chọn phiên bản A --</option>${opts}`;
+  document.getElementById('compare-b').innerHTML=`<option value="">-- Chọn phiên bản B --</option>${opts}`;
+  if(state.versions.length>=2){
+    document.getElementById('compare-a').value=state.versions[0].id;
+    document.getElementById('compare-b').value=state.versions[state.versions.length-1].id;
+    runCompare();
+  }
+}
+
+function runCompare(){
+  const aId=parseInt(document.getElementById('compare-a').value);
+  const bId=parseInt(document.getElementById('compare-b').value);
+  const el=document.getElementById('compare-result');
+  const btnExport=document.getElementById('btn-export-compare');
+  if(!aId||!bId){el.innerHTML='';btnExport.style.display='none';return;}
+  const vA=state.versions.find(v=>v.id===aId);
+  const vB=state.versions.find(v=>v.id===bId);
+  if(!vA||!vB) return;
+
+  const mapA=Object.fromEntries(vA.risks.map(r=>[r.stt,r]));
+  const mapB=Object.fromEntries(vB.risks.map(r=>[r.stt,r]));
+  const allSTT=new Set([...vA.risks.map(r=>r.stt),...vB.risks.map(r=>r.stt)]);
+  let newRisks=[],removedRisks=[],improved=[],worsened=[],unchanged=[];
+  let completedMeasures=0,newMeasures=0,completedDetails=[];
+  const mdOrder=['Trọng yếu','Đáng kể','Trung bình','Thấp'];
+  function mdIdx(m){ return mdOrder.findIndex(x=>m?.toLowerCase().includes(x.toLowerCase())); }
+
+  allSTT.forEach(stt=>{
+    const a=mapA[stt],b=mapB[stt];
+    if(!a&&b){newRisks.push(b);return;}
+    if(a&&!b){removedRisks.push(a);return;}
+    if(a&&b){
+      const ia=mdIdx(a.mucdo),ib=mdIdx(b.mucdo);
+      if(ib>ia&&ia>=0&&ib>=0) improved.push({a,b});
+      else if(ib<ia&&ia>=0&&ib>=0) worsened.push({a,b});
+      else unchanged.push({a,b});
+      const bpA=a.measures||[],bpB=b.measures||[];
+      bpB.forEach((mb,idx)=>{
+        if(mb.tiendo==='Đã thực hiện'){
+          const ma=bpA[idx];
+          if(!ma||ma.tiendo!=='Đã thực hiện'){
+            completedMeasures++;
+            completedDetails.push({risk:`#${b.stt} ${b.ten}`,bp:mb.bienphap,thoihan:mb.thoihan});
+          }
+        }
+      });
+      newMeasures+=Math.max(0,bpB.length-bpA.length);
+    }
+  });
+
+  lastCompareResult={vA,vB,newRisks,removedRisks,improved,worsened,unchanged,completedMeasures,completedDetails,newMeasures};
+  btnExport.style.display='';
+
+  el.innerHTML=`
+    <div class="stats-grid">
+      ${sb(newRisks.length,'Rủi ro mới thêm','var(--green)')}
+      ${sb(removedRisks.length,'Rủi ro đã xóa','var(--red)')}
+      ${sb(improved.length,'Giảm mức độ','var(--teal)')}
+      ${sb(worsened.length,'Tăng mức độ','var(--amber)')}
+      ${sb(completedMeasures,'Biện pháp hoàn thành','var(--purple)')}
+      ${sb(newMeasures,'Biện pháp mới','var(--accent)')}
+    </div>
+    ${newRisks.length?ds('✦ Rủi ro mới trong '+vB.label,newRisks.map(r=>`<div class="delta-row delta-new"><span style="font-size:14px">✦</span><span class="delta-label"><strong>#${r.stt} ${r.ten}</strong> · ${r.donvi||'—'}</span><span class="badge ${badgeClass(r.mucdo)}">${r.mucdo||'?'}</span></div>`).join('')):''}
+    ${improved.length?ds('↓ Rủi ro được giảm mức độ',improved.map(({a,b})=>`<div class="delta-row delta-improved"><span style="font-size:14px">↓</span><span class="delta-label"><strong>#${a.stt} ${a.ten}</strong></span><span style="font-size:12px;color:var(--text2)">${a.mucdo} → <strong style="color:var(--green)">${b.mucdo}</strong></span></div>`).join('')):''}
+    ${worsened.length?ds('↑ Rủi ro tăng mức độ',worsened.map(({a,b})=>`<div class="delta-row delta-worsened"><span style="font-size:14px">↑</span><span class="delta-label"><strong>#${a.stt} ${a.ten}</strong></span><span style="font-size:12px;color:var(--text2)">${a.mucdo} → <strong style="color:var(--red)">${b.mucdo}</strong></span></div>`).join('')):''}
+    ${completedDetails.length?ds('✓ Biện pháp vừa hoàn thành',completedDetails.map(d=>`<div class="delta-row delta-new"><span style="font-size:14px">✓</span><div class="delta-label"><div style="font-weight:600;font-size:12px">${d.risk}</div><div style="font-size:12px;color:var(--text2)">${d.bp}</div></div>${d.thoihan?`<span style="font-size:11px;color:var(--text3)">${d.thoihan}</span>`:''}</div>`).join('')):''}
+    ${removedRisks.length?ds('✕ Rủi ro đã xóa khỏi '+vB.label,removedRisks.map(r=>`<div class="delta-row delta-removed"><span style="font-size:14px">✕</span><span class="delta-label">#${r.stt} ${r.ten}</span></div>`).join('')):''}
+    ${unchanged.length?`<div style="font-size:12px;color:var(--text3);margin-top:12px">Không thay đổi: ${unchanged.length} rủi ro</div>`:''}
+  `;
+}
+
+function sb(n,label,color){ return `<div class="stat-card"><div class="stat-num" style="color:${color}">${n}</div><div class="stat-label">${label}</div></div>`; }
+function ds(title,html){ return `<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px">${title}</div>${html}</div>`; }
+
+// ═══ EXPORT COMPARE REPORT (xlsx) ═══
+function exportCompareReport(){
+  if(!lastCompareResult){ toast('Chưa có kết quả so sánh','error'); return; }
+  const {vA,vB,newRisks,removedRisks,improved,worsened,completedMeasures,completedDetails,newMeasures,unchanged}=lastCompareResult;
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: Tóm tắt
+  const sum=[
+    [`BÁO CÁO SO SÁNH PHIÊN BẢN`],
+    [`Phiên bản A:`,vA.label,`(${fmtDate(vA.ts)})`],
+    [`Phiên bản B:`,vB.label,`(${fmtDate(vB.ts)})`],
+    [`Ngày xuất:`,new Date().toLocaleDateString('vi-VN')],
+    [],
+    [`CHỈ SỐ`, `GIÁ TRỊ`],
+    [`Rủi ro mới thêm`, newRisks.length],
+    [`Rủi ro đã xóa`, removedRisks.length],
+    [`Rủi ro giảm mức độ`, improved.length],
+    [`Rủi ro tăng mức độ`, worsened.length],
+    [`Biện pháp hoàn thành mới`, completedMeasures],
+    [`Biện pháp mới thêm`, newMeasures],
+    [`Không thay đổi`, unchanged.length],
+    [`Tổng rủi ro (phiên bản B)`, vB.risks.length],
+  ];
+  const ws1=XLSX.utils.aoa_to_sheet(sum);
+  ws1['!cols']=[{wch:35},{wch:25},{wch:25}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Tóm tắt');
+
+  // Sheet 2: Chi tiết thay đổi
+  const details=[
+    ['LOẠI THAY ĐỔI','STT','Tên rủi ro','Đơn vị','Mức độ cũ','Mức độ mới','Ghi chú'],
+    ...newRisks.map(r=>['RỦI RO MỚI',r.stt,r.ten,r.donvi,'—',r.mucdo,'']),
+    ...removedRisks.map(r=>['ĐÃ XÓA',r.stt,r.ten,r.donvi,r.mucdo,'—','']),
+    ...improved.map(({a,b})=>['GIẢM MỨC ĐỘ',a.stt,a.ten,a.donvi,a.mucdo,b.mucdo,'Cải thiện']),
+    ...worsened.map(({a,b})=>['TĂNG MỨC ĐỘ',a.stt,a.ten,a.donvi,a.mucdo,b.mucdo,'Cần chú ý']),
+    ...unchanged.map(({a})=>['KHÔNG THAY ĐỔI',a.stt,a.ten,a.donvi,a.mucdo,a.mucdo,'']),
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(details);
+  ws2['!cols']=[{wch:18},{wch:6},{wch:28},{wch:20},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Chi tiết thay đổi');
+
+  // Sheet 3: Biện pháp hoàn thành
+  const bpDone=[
+    ['Rủi ro','Biện pháp đã hoàn thành','Thời hạn'],
+    ...completedDetails.map(d=>[d.risk,d.bp,d.thoihan])
+  ];
+  const ws3=XLSX.utils.aoa_to_sheet(bpDone);
+  ws3['!cols']=[{wch:28},{wch:65},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws3,'Biện pháp hoàn thành');
+
+  const fname=`Bao_cao_so_sanh_${vA.label.replace(/[^a-z0-9]/gi,'_')}_vs_${vB.label.replace(/[^a-z0-9]/gi,'_')}.xlsx`;
+  XLSX.writeFile(wb,fname);
+  toast(`Đã xuất: ${fname}`);
+}
+
+// ═══ EXPORT XLSX (file gốc) ═══
+function exportXlsx(){
+  if(!state.risks.length){toast('Chưa có dữ liệu','error');return;}
+  const wb=XLSX.utils.book_new();
+  const ws_data=[
+    ['STT',null,null,null,'Mô tả rủi ro',null,null,'Đánh giá sơ bộ rủi ro (rủi ro hiện tại)',null,null,null,null,'Mục tiêu',null,null,'Hành động giảm thiểu',null,null,'Đánh giá tiến độ'],
+    [null,'Loại\nrủi ro','Rủi ro','Mô tả rủi ro','Nguyên nhân','Ảnh hưởng','Đơn vị\nquản lý','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Xu\nhướng','Hoạt động kiểm soát','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Biện pháp giảm thiểu rủi ro\nhướng tới tương lai','Đơn vị\nquản lý','Thời hạn','Đánh giá tiến độ'],
+  ];
+  [...state.risks].sort((a,b)=>(a.stt||0)-(b.stt||0)).forEach(r=>{
+    const ms=r.measures||[];
+    if(!ms.length){ ws_data.push([r.stt,r.loai,r.ten,r.mota,r.nguyen,r.anhhuo,r.donvi,r.kn,r.tacdong,r.mucdo,r.xuhuong,r.hoatdong,r.kn2,r.tacdong2,r.mucdo2,null,null,null,null]); }
+    else ms.forEach((m,idx)=>{
+      if(idx===0) ws_data.push([r.stt,r.loai,r.ten,r.mota,r.nguyen,r.anhhuo,r.donvi,r.kn,r.tacdong,r.mucdo,r.xuhuong,r.hoatdong,r.kn2,r.tacdong2,r.mucdo2,m.bienphap,m.donvi,m.thoihan,m.tiendo]);
+      else ws_data.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,m.bienphap,m.donvi,m.thoihan,m.tiendo]);
+    });
+  });
+  const ws=XLSX.utils.aoa_to_sheet(ws_data);
+  ws['!cols']=[{wch:8},{wch:18},{wch:16},{wch:28},{wch:28},{wch:26},{wch:16},{wch:13},{wch:14},{wch:13},{wch:11},{wch:38},{wch:13},{wch:10},{wch:13},{wch:55},{wch:16},{wch:14},{wch:16}];
+  ws['!rows']=[{hpt:30},{hpt:36}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:1,c:0}},{s:{r:0,c:1},e:{r:0,c:6}},{s:{r:0,c:7},e:{r:0,c:11}},{s:{r:0,c:12},e:{r:0,c:14}},{s:{r:0,c:15},e:{r:0,c:17}},{s:{r:0,c:18},e:{r:1,c:18}}];
+  XLSX.utils.book_append_sheet(wb,ws,'Danh mục rủi ro');
+  XLSX.writeFile(wb,`Danh_muc_rui_ro_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Đã xuất file Excel');
+}
+
+// ═══ SUPABASE CONFIG ═══
+const SB_URL = 'https://pqceeqcutkphvmyqsmyt.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxY2VlcWN1dGtwaHZteXFzbXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDY4OTUsImV4cCI6MjA5MzAyMjg5NX0.GpxtWrlpiLWCAG0zOcmiPjhIkqa5Fy2yk1W34f6Xl0k';
+
+let SB_HEADERS = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'resolution=merge-duplicates'};
+let currentSession = null; // lưu session token
+
+function updateSBHeaders(token){
+  SB_HEADERS = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+(token||SB_KEY),'Prefer':'resolution=merge-duplicates'};
+}
+
+// ─ Auth REST helpers ─
+async function sbAuthSignIn(email, password){
+  const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SB_KEY},
+    body: JSON.stringify({email, password})
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.error_description || d.msg || 'Đăng nhập thất bại');
+  return d; // { access_token, refresh_token, user, ... }
+}
+
+async function sbAuthSignOut(token){
+  await fetch(`${SB_URL}/auth/v1/logout`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+token}
+  }).catch(()=>{});
+}
+
+async function sbGetProfile(userId, token){
+  const r = await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${userId}&select=*`, {
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+token}
+  });
+  const d = await r.json();
+  return d[0] || null;
+}
+
+async function sbGetAllProfiles(){
+  const r = await fetch(`${SB_URL}/rest/v1/user_profiles?select=*&order=created_at`, {headers:SB_HEADERS});
+  return r.ok ? await r.json() : [];
+}
+
+async function sbUpsertProfile(profile){
+  const r = await fetch(`${SB_URL}/rest/v1/user_profiles`, {
+    method:'POST',
+    headers:{...SB_HEADERS,'Prefer':'resolution=merge-duplicates'},
+    body: JSON.stringify(profile)
+  });
+  if(!r.ok){ const e=await r.json(); throw new Error(e.message||'Lỗi lưu profile'); }
+}
+
+async function sbUpdateProfile(userId, data){
+  const r = await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${userId}`, {
+    method:'PATCH',
+    headers:{...SB_HEADERS},
+    body: JSON.stringify(data)
+  });
+  if(!r.ok){ const e=await r.json(); throw new Error(e.message||'Lỗi cập nhật profile'); }
+}
+
+async function sbDeleteProfile(userId){
+  await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${userId}`, {method:'DELETE',headers:SB_HEADERS});
+}
+
+async function sbAdminCreateUser(email, password){
+  // Dùng signup endpoint (admin tạo user)
+  const r = await fetch(`${SB_URL}/auth/v1/admin/users`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},
+    body: JSON.stringify({email, password, email_confirm:true})
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.message||d.msg||'Lỗi tạo user');
+  return d;
+}
+
+async function sbAdminDeleteUser(userId){
+  const r = await fetch(`${SB_URL}/auth/v1/admin/users/${userId}`, {
+    method:'DELETE',
+    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  });
+  if(!r.ok){ const e=await r.json(); throw new Error(e.message||'Lỗi xóa user'); }
+}
+
+// ─ Lưu/lấy session từ localStorage ─
+const SESSION_KEY = 'riskapp_session';
+function saveSession(session){ localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }
+function loadSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(e){return null;} }
+function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+
+async function sbGet(key) {
+  const r = await fetch(`${SB_URL}/rest/v1/risk_store?key=eq.${encodeURIComponent(key)}&select=value`, {headers:SB_HEADERS});
+  if (!r.ok) throw new Error('GET failed: ' + r.status);
+  const d = await r.json();
+  return d.length ? JSON.parse(d[0].value) : null;
+}
+
+async function sbSet(key, value) {
+  const r = await fetch(`${SB_URL}/rest/v1/risk_store`, {
+    method:'POST',
+    headers:{...SB_HEADERS,'Prefer':'resolution=merge-duplicates'},
+    body: JSON.stringify({key, value: JSON.stringify(value), updated_at: new Date().toISOString()})
+  });
+  if (!r.ok) throw new Error('SET failed: ' + r.status);
+}
+
+// ═══ AUTH & PHÂN QUYỀN ═══
+let currentUser = null;
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pwd   = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+  errEl.style.display='none';
+  if(!email||!pwd){ errEl.textContent='Vui lòng nhập email và mật khẩu'; errEl.style.display='block'; return; }
+  btn.textContent='Đang đăng nhập...'; btn.disabled=true;
+  try {
+    const session = await sbAuthSignIn(email, pwd);
+    await onLoginSuccess(session);
+  } catch(e){
+    const msg = e.message.includes('Invalid login credentials') ? 'Email hoặc mật khẩu không đúng' : e.message;
+    errEl.textContent = msg; errEl.style.display='block';
+  }
+  btn.textContent='Đăng nhập'; btn.disabled=false;
+}
+
+async function onLoginSuccess(session){
+  currentSession = session;
+  updateSBHeaders(session.access_token);
+  saveSession(session);
+
+  const profile = await sbGetProfile(session.user.id, session.access_token);
+  if(!profile){
+    document.getElementById('login-error').textContent='Tài khoản chưa được cấp quyền. Liên hệ quản trị viên.';
+    document.getElementById('login-error').style.display='block';
+    clearSession(); return;
+  }
+  currentUser = profile;
+  applyRoleUI();
+  document.getElementById('login-screen').style.display='none';
+  renderList(); renderDetail();
+  autoPullOnLoad();
+  startAutoPing();
+  toast(`Xin chào ${profile.ho_ten||profile.email}!`);
+}
+
+async function doLogout(){
+  if(!confirm('Bạn muốn đăng xuất?')) return;
+  if(currentSession) await sbAuthSignOut(currentSession.access_token);
+  currentUser=null; currentSession=null;
+  clearSession();
+  updateSBHeaders(null);
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-password').value='';
+}
+
+function applyRoleUI(){
+  if(!currentUser) return;
+  const role    = currentUser.role;
+  const isAdmin  = role==='admin';
+  const isEditor = role==='editor'||isAdmin;
+
+  document.getElementById('tab-admin').style.display = isAdmin ? '' : 'none';
+  if(!isEditor){
+    document.getElementById('btn-push').style.display='none';
+    document.querySelectorAll('.btn-primary,.btn-danger').forEach(btn=>{
+      if(btn.id==='login-btn'||btn.id==='u-save-btn') return;
+      btn.style.display='none';
+    });
+  }
+  document.getElementById('user-name').textContent = currentUser.ho_ten||currentUser.email;
+  const roleCls={'admin':'role-admin','editor':'role-editor','viewer':'role-viewer'};
+  const roleLabel={'admin':'Admin','editor':'Editor','viewer':'Viewer'};
+  document.getElementById('user-role-badge').innerHTML=`<span class="${roleCls[role]||'role-viewer'}">${roleLabel[role]||role}</span>`;
+}
+
+// ═══ ADMIN — QUẢN LÝ USER ═══
+let editingUserId = null;
+
+function openAddUserModal(){
+  editingUserId=null;
+  document.getElementById('user-modal-title').textContent='Thêm người dùng';
+  document.getElementById('u-save-btn').textContent='Tạo tài khoản';
+  ['u-hoten','u-email','u-password','u-donvi'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('u-role').value='viewer';
+  document.getElementById('u-password-wrap').style.display='';
+  document.getElementById('u-email').readOnly=false;
+  document.getElementById('user-modal').style.display='flex';
+}
+
+function openEditUserModal(userId, hoten, email, role, donvi){
+  editingUserId=userId;
+  document.getElementById('user-modal-title').textContent='Chỉnh sửa người dùng';
+  document.getElementById('u-save-btn').textContent='Lưu thay đổi';
+  document.getElementById('u-hoten').value=hoten||'';
+  document.getElementById('u-email').value=email||'';
+  document.getElementById('u-email').readOnly=true;
+  document.getElementById('u-role').value=role||'viewer';
+  document.getElementById('u-donvi').value=donvi||'';
+  document.getElementById('u-password-wrap').style.display='none';
+  document.getElementById('user-modal').style.display='flex';
+}
+
+function closeUserModal(){ document.getElementById('user-modal').style.display='none'; }
+
+async function saveUser(){
+  const hoten = document.getElementById('u-hoten').value.trim();
+  const email = document.getElementById('u-email').value.trim();
+  const pwd   = document.getElementById('u-password').value;
+  const role  = document.getElementById('u-role').value;
+  const donvi = document.getElementById('u-donvi').value.trim();
+  if(!email){ toast('Vui lòng nhập email','error'); return; }
+  const btn = document.getElementById('u-save-btn');
+  btn.disabled=true; btn.textContent='Đang lưu...';
+  try {
+    if(editingUserId){
+      await sbUpdateProfile(editingUserId, {ho_ten:hoten, role, don_vi:donvi});
+      toast('Đã cập nhật người dùng');
+    } else {
+      if(!pwd||pwd.length<6){ toast('Mật khẩu phải ít nhất 6 ký tự','error'); btn.disabled=false; btn.textContent='Tạo tài khoản'; return; }
+      const newUser = await sbAdminCreateUser(email, pwd);
+      await sbUpsertProfile({id:newUser.id, email, ho_ten:hoten, role, don_vi:donvi});
+      toast(`Đã tạo tài khoản cho ${hoten||email}`);
+    }
+    closeUserModal(); renderAdminTab();
+  } catch(e){ toast('Lỗi: '+e.message,'error'); }
+  btn.disabled=false; btn.textContent=editingUserId?'Lưu thay đổi':'Tạo tài khoản';
+}
+
+async function deleteUser(userId, email){
+  if(!confirm(`Xóa tài khoản "${email}"?`)) return;
+  try {
+    await sbDeleteProfile(userId);
+    await sbAdminDeleteUser(userId);
+    toast('Đã xóa tài khoản'); renderAdminTab();
+  } catch(e){ toast('Lỗi: '+e.message,'error'); }
+}
+
+async function renderAdminTab(){
+  if(!currentUser||currentUser.role!=='admin') return;
+  const users = await sbGetAllProfiles();
+  const total=users.length, admins=users.filter(u=>u.role==='admin').length,
+        editors=users.filter(u=>u.role==='editor').length, viewers=users.filter(u=>u.role==='viewer').length;
+  document.getElementById('admin-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Tổng tài khoản</div></div>
+    <div class="stat-card" style="border-top:3px solid var(--accent)"><div class="stat-num" style="color:var(--accent)">${admins}</div><div class="stat-label">Admin</div></div>
+    <div class="stat-card" style="border-top:3px solid var(--green)"><div class="stat-num" style="color:var(--green)">${editors}</div><div class="stat-label">Editor</div></div>
+    <div class="stat-card" style="border-top:3px solid var(--border)"><div class="stat-num" style="color:var(--text2)">${viewers}</div><div class="stat-label">Viewer</div></div>`;
+  const roleCls={'admin':'role-admin','editor':'role-editor','viewer':'role-viewer'};
+  const roleLabel={'admin':'Admin','editor':'Editor','viewer':'Viewer'};
+  document.getElementById('admin-user-table').innerHTML=`
+    <tr><th>Họ tên</th><th>Email</th><th>Đơn vị</th><th>Quyền</th><th>Ngày tạo</th><th></th></tr>
+    ${users.map(u=>`<tr>
+      <td style="font-weight:600">${u.ho_ten||'—'}</td>
+      <td style="color:var(--text2);font-size:12px">${u.email}</td>
+      <td style="color:var(--text2)">${u.don_vi||'—'}</td>
+      <td><span class="${roleCls[u.role]||'role-viewer'}">${roleLabel[u.role]||u.role}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleDateString('vi-VN'):''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="openEditUserModal('${u.id}','${(u.ho_ten||'').replace(/'/g,"\\'")}','${u.email}','${u.role}','${(u.don_vi||'').replace(/'/g,"\\'")}')">✎ Sửa</button>
+        ${u.id!==currentUser.id?`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${u.email}')">✕</button>`:'<span style="font-size:11px;color:var(--text3)">(bạn)</span>'}
+      </td>
+    </tr>`).join('')}`;
+}
+
+
+function setSyncBadge(status) {
+  const b = document.getElementById('sync-status-badge');
+  if (!b) return;
+  const map = {
+    cloud:  ['☁ CLOUD',  '#0d2b22', 'var(--green)', '#1a4a38'],
+    syncing:['⟳ SYNC...',  '#251a07', 'var(--amber)', '#4a3010'],
+    ok:     ['✓ SYNCED',  '#0d2b22', 'var(--green)', '#1a4a38'],
+    error:  ['✕ ERROR',   '#2b0d10', 'var(--red)',   '#5a1a1e'],
+    offline:['⚡ LOCAL',  '#1c202c', 'var(--text2)', '#2a2f42'],
+  };
+  const [txt,bg,color,border] = map[status] || map.cloud;
+  b.textContent = txt;
+  b.style.background = bg; b.style.color = color; b.style.borderColor = border;
+}
+
+async function syncPush() {
+  setSyncBadge('syncing');
+  const btnPush = document.getElementById('btn-push');
+  btnPush.disabled = true;
+  try {
+    const label = prompt('Tên phiên bản (để lưu lịch sử):', `Cập nhật ${new Date().toLocaleDateString('vi-VN')}`);
+    if (!label) { setSyncBadge('cloud'); btnPush.disabled=false; return; }
+
+    // Save version snapshot
+    const newVersion = {id:Date.now(), label, ts:Date.now(), risks:JSON.parse(JSON.stringify(state.risks))};
+    state.versions.push(newVersion);
+
+    // Push risks + fmeaItems + versions to Supabase
+    await sbSet('risks', state.risks);
+    await sbSet('fmeaItems', state.fmeaItems);
+    await sbSet('versions', state.versions);
+    await sbSet('meta', {lastPush: Date.now(), lastLabel: label, pushedBy: navigator.userAgent.slice(0,40)});
+
+    saveState();
+    setSyncBadge('ok');
+    toast(`☁ Đã đẩy lên cloud: "${label}" (${state.risks.length} rủi ro, ${state.fmeaItems.length} mục FMEA)`);
+    setTimeout(()=>setSyncBadge('cloud'), 3000);
+  } catch(e) {
+    setSyncBadge('error');
+    toast('Lỗi push: ' + e.message, 'error');
+    setTimeout(()=>setSyncBadge('cloud'), 4000);
+  }
+  btnPush.disabled = false;
+}
+
+async function syncPull() {
+  setSyncBadge('syncing');
+  const btnPull = document.getElementById('btn-pull');
+  btnPull.disabled = true;
+  try {
+    const [risks, fmeaItems, versions, meta] = await Promise.all([
+      sbGet('risks'), sbGet('fmeaItems'), sbGet('versions'), sbGet('meta')
+    ]);
+
+    if (!risks) { toast('Cloud chưa có dữ liệu — hãy Push trước', 'error'); setSyncBadge('offline'); btnPull.disabled=false; return; }
+
+    state.risks = risks;
+    state.fmeaItems = fmeaItems || state.fmeaItems || [];
+    state.versions = versions || state.versions;
+    state.nextId = risks.length ? Math.max(...risks.map(r=>r.id||0))+1 : 1;
+    state.nextFmeaId = state.fmeaItems.length ? Math.max(...state.fmeaItems.map(f=>f.id||0))+1 : 1;
+    state.selectedId = null;
+
+    saveState(); renderList(); renderDetail();
+    if (state.currentTab==='versions') renderVersions();
+    if (state.currentTab==='fmea') renderFmea();
+
+    setSyncBadge('ok');
+    const who = meta?.lastLabel || '?';
+    const when = meta?.lastPush ? new Date(meta.lastPush).toLocaleString('vi-VN') : '?';
+    toast(`☁ Đã kéo về: ${risks.length} rủi ro, ${state.fmeaItems.length} mục FMEA — phiên bản "${who}" lúc ${when}`);
+    setTimeout(()=>setSyncBadge('cloud'), 3000);
+  } catch(e) {
+    setSyncBadge('error');
+    toast('Lỗi pull: ' + e.message, 'error');
+    setTimeout(()=>setSyncBadge('cloud'), 4000);
+  }
+  btnPull.disabled = false;
+}
+
+// Auto-pull on load
+async function autoPullOnLoad() {
+  try {
+    const meta = await sbGet('meta');
+    if (!meta) return;
+    const cloudTs = meta.lastPush || 0;
+    const localTs = state.versions.length ? Math.max(...state.versions.map(v=>v.ts||0)) : 0;
+    if (cloudTs > localTs) {
+      setSyncBadge('syncing');
+      await syncPull();
+      toast('☁ Tự động kéo dữ liệu mới nhất từ cloud');
+    }
+  } catch(e) { setSyncBadge('offline'); }
+}
+
+// ═══ AUTO-PING KEEP-ALIVE (chống Supabase free-tier tự pause do không hoạt động) ═══
+const PING_INTERVAL_MS = 1000 * 60 * 60 * 12; // mỗi 12 giờ khi app đang mở
+let pingTimer = null;
+async function sbPing(){
+  try {
+    await fetch(`${SB_URL}/rest/v1/risk_store?select=key&limit=1`, {headers:SB_HEADERS});
+    const el=document.getElementById('ping-indicator');
+    if(el){ el.title='Lần ping cuối: '+new Date().toLocaleString('vi-VN'); }
+    localStorage.setItem('riskapp_last_ping', String(Date.now()));
+  } catch(e) { /* im lặng - không làm phiền người dùng nếu mất mạng tạm thời */ }
+}
+function startAutoPing(){
+  sbPing();
+  if(pingTimer) clearInterval(pingTimer);
+  pingTimer = setInterval(sbPing, PING_INTERVAL_MS);
+}
+
+// ═══ GAS SYNC (giữ lại cho tương thích) ═══
+function saveGASUrl(){ toast('App đã dùng Supabase — không cần Google Apps Script nữa'); }
+function renderTopbar(){}
+async function syncGAS(){ await syncPush(); }
+
+// ═══ MA TRẬN 5×5 KHẢ NĂNG × ẢNH HƯỞNG ═══
+const MATRIX_KN  = ['Rất khó xảy ra','Khó xảy ra','Có thể','Rất có thể','Gần như chắc chắn'];
+const MATRIX_AH  = ['Rất cao','Cao','Trung bình','Thấp','Rất thấp'];
+// rows = Ảnh hưởng (Rất cao→Rất thấp), cols = Khả năng (Rất khó→Gần như chắc chắn)
+const MATRIX_5X5 = [
+  ['Trung bình','Đáng kể',  'Trọng yếu','Trọng yếu','Trọng yếu'],
+  ['Trung bình','Trung bình','Đáng kể',  'Trọng yếu','Trọng yếu'],
+  ['Thấp',      'Trung bình','Trung bình','Đáng kể',  'Trọng yếu'],
+  ['Thấp',      'Thấp',      'Trung bình','Trung bình','Đáng kể' ],
+  ['Thấp',      'Thấp',      'Thấp',      'Trung bình','Đáng kể' ],
+];
+const MUCDO_COLORS = {
+  'Trọng yếu':'#C00000','Đáng kể':'#E36C09','Trung bình':'#C8A800','Thấp':'#538135'
+};
+function calcMucDo(kn, ah){
+  const ci = MATRIX_KN.indexOf(kn);
+  const ri = MATRIX_AH.indexOf(ah);
+  if(ci<0 || ri<0) return '';
+  return MATRIX_5X5[ri][ci];
+}
+function setMucDoDisplay(displayId, hiddenId, mucdo){
+  const el = document.getElementById(displayId);
+  const hid = document.getElementById(hiddenId);
+  if(!mucdo){ el.textContent='—'; el.style.color='var(--text3)'; hid.value=''; return; }
+  el.textContent = mucdo;
+  el.style.color = MUCDO_COLORS[mucdo]||'var(--text)';
+  hid.value = mucdo;
+}
+function autoCalcMucDo(){
+  const kn  = document.getElementById('f-kn').value;
+  const ah  = document.getElementById('f-tacdong').value;
+  const kn2 = document.getElementById('f-kn2').value;
+  const ah2 = document.getElementById('f-tacdong2').value;
+  setMucDoDisplay('f-mucdo-display','f-mucdo', calcMucDo(kn,ah));
+  setMucDoDisplay('f-mucdo2-display','f-mucdo2', calcMucDo(kn2,ah2));
+}
+
+// ═══ FMEA MODULE ═══
+function fmeaRpnLevel(rpn){
+  if(rpn>=200) return {cls:'rpn-critical', label:'Trọng yếu'};
+  if(rpn>=100) return {cls:'rpn-significant', label:'Đáng kể'};
+  return {cls:'rpn-acceptable', label:'Chấp nhận được'};
+}
+function updateFmeaRpnPreview(){
+  const s=Number(document.getElementById('fm-s').value)||0;
+  const o=Number(document.getElementById('fm-o').value)||0;
+  const d=Number(document.getElementById('fm-d').value)||0;
+  const rpn=s*o*d;
+  const lvl=fmeaRpnLevel(rpn);
+  const badge=document.getElementById('fmea-rpn-preview');
+  badge.textContent=rpn;
+  badge.className='rpn-badge '+lvl.cls;
+  document.getElementById('fmea-rpn-preview-label').textContent=lvl.label;
+}
+function openFmeaModal(){
+  state.editingFmeaId=null;
+  document.getElementById('fmea-modal-title').textContent='Thêm mục FMEA';
+  ['fm-process','fm-mode','fm-effect','fm-cause','fm-control','fm-donvi','fm-action'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fm-status').value='';
+  document.getElementById('fm-s').value=5; document.getElementById('fm-o').value=5; document.getElementById('fm-d').value=5;
+  updateFmeaRpnPreview();
+  document.getElementById('fmea-modal').style.display='flex';
+}
+function openEditFmeaModal(id){
+  const f=state.fmeaItems.find(x=>x.id===id); if(!f) return;
+  state.editingFmeaId=id;
+  document.getElementById('fmea-modal-title').textContent='Chỉnh sửa mục FMEA';
+  document.getElementById('fm-process').value=f.process||'';
+  document.getElementById('fm-mode').value=f.mode||'';
+  document.getElementById('fm-effect').value=f.effect||'';
+  document.getElementById('fm-cause').value=f.cause||'';
+  document.getElementById('fm-control').value=f.control||'';
+  document.getElementById('fm-donvi').value=f.donvi||'';
+  document.getElementById('fm-action').value=f.action||'';
+  document.getElementById('fm-status').value=f.status||'';
+  document.getElementById('fm-s').value=f.s||5;
+  document.getElementById('fm-o').value=f.o||5;
+  document.getElementById('fm-d').value=f.d||5;
+  updateFmeaRpnPreview();
+  document.getElementById('fmea-modal').style.display='flex';
+}
+function closeFmeaModal(){ document.getElementById('fmea-modal').style.display='none'; }
+function saveFmea(){
+  const process=document.getElementById('fm-process').value.trim();
+  const mode=document.getElementById('fm-mode').value.trim();
+  if(!process||!mode){ toast('Vui lòng nhập Quy trình và Hình thức sai lỗi','error'); return; }
+  const s=Math.min(10,Math.max(1,Number(document.getElementById('fm-s').value)||1));
+  const o=Math.min(10,Math.max(1,Number(document.getElementById('fm-o').value)||1));
+  const d=Math.min(10,Math.max(1,Number(document.getElementById('fm-d').value)||1));
+  const data={
+    process, mode,
+    effect:document.getElementById('fm-effect').value,
+    cause:document.getElementById('fm-cause').value,
+    control:document.getElementById('fm-control').value,
+    donvi:document.getElementById('fm-donvi').value,
+    action:document.getElementById('fm-action').value,
+    status:document.getElementById('fm-status').value,
+    s,o,d, rpn:s*o*d, updatedAt:Date.now(),
+  };
+  if(state.editingFmeaId){
+    const idx=state.fmeaItems.findIndex(x=>x.id===state.editingFmeaId);
+    if(idx>=0) state.fmeaItems[idx]={...state.fmeaItems[idx],...data};
+    toast('Đã cập nhật mục FMEA');
+  } else {
+    state.fmeaItems.push({id:state.nextFmeaId++, ...data, promoted:false});
+    toast('Đã thêm mục FMEA');
+  }
+  saveState(); closeFmeaModal(); renderFmea();
+  sbSet('fmeaItems', state.fmeaItems).catch(()=>{});
+}
+function deleteFmea(id){
+  if(!confirm('Xác nhận xóa mục FMEA này?')) return;
+  state.fmeaItems=state.fmeaItems.filter(x=>x.id!==id);
+  saveState(); renderFmea(); toast('Đã xóa mục FMEA');
+  sbSet('fmeaItems', state.fmeaItems).catch(()=>{});
+}
+function promoteFmeaToRisk(id){
+  const f=state.fmeaItems.find(x=>x.id===id); if(!f) return;
+  if(f.promoted){ toast('Mục này đã được đưa vào danh mục rủi ro trước đó','error'); return; }
+  if(!confirm(`Đưa "${f.mode}" vào Danh mục rủi ro?`)) return;
+  const lvl=fmeaRpnLevel(f.rpn);
+  const mucdo = f.rpn>=200 ? 'Trọng yếu' : (f.rpn>=100 ? 'Đáng kể' : 'Trung bình');
+  const stt=state.risks.length?Math.max(...state.risks.map(r=>r.stt||0))+1:1;
+  const newRisk={
+    id:state.nextId++, stt,
+    loai:'Rủi ro hoạt động',
+    ten:f.mode,
+    mota:`${f.process}${f.effect?' — Ảnh hưởng: '+f.effect:''}`,
+    nguyen:f.cause||'',
+    anhhuo:f.effect||'',
+    donvi:f.donvi||'',
+    kn:'', tacdong:'', mucdo,
+    xuhuong:'', hoatdong:f.action||f.control||'',
+    kn2:'', tacdong2:'', mucdo2:'',
+    measures: f.action ? [{bienphap:f.action, donvi:f.donvi||'', thoihan:'', tiendo:'Chưa thực hiện'}] : [],
+    fmeaRpn:f.rpn, fmeaSource:f.id,
+  };
+  state.risks.push(newRisk);
+  f.promoted=true; f.promotedRiskId=newRisk.id;
+  saveState(); renderList(); renderDetail(); renderFmea();
+  toast(`Đã đưa vào Danh mục rủi ro với mức "${mucdo}" (#${stt})`);
+  sbSet('risks', state.risks).catch(()=>{});
+  sbSet('fmeaItems', state.fmeaItems).catch(()=>{});
+}
+function renderFmea(){
+  const items=state.fmeaItems||[];
+  const critical=items.filter(f=>f.rpn>=200).length;
+  const significant=items.filter(f=>f.rpn>=100&&f.rpn<200).length;
+  const acceptable=items.filter(f=>f.rpn<100).length;
+  document.getElementById('fmea-stats').innerHTML=`
+    <div class="stat-card" style="border-top:3px solid var(--red)">
+      <div class="stat-num" style="color:var(--red)">${critical}</div>
+      <div class="stat-label">Trọng yếu (RPN ≥ 200)</div>
+    </div>
+    <div class="stat-card" style="border-top:3px solid var(--amber)">
+      <div class="stat-num" style="color:var(--amber)">${significant}</div>
+      <div class="stat-label">Đáng kể (RPN 100–199)</div>
+    </div>
+    <div class="stat-card" style="border-top:3px solid var(--green)">
+      <div class="stat-num" style="color:var(--green)">${acceptable}</div>
+      <div class="stat-label">Chấp nhận được (RPN &lt; 100)</div>
+    </div>`;
+
+  const sorted=[...items].sort((a,b)=>b.rpn-a.rpn);
+  const table=document.getElementById('fmea-table');
+  if(!sorted.length){
+    table.innerHTML=`<tr><td style="padding:40px;text-align:center;color:var(--text3)">Chưa có mục FMEA nào — nhấn "+ Thêm mục FMEA" để bắt đầu</td></tr>`;
+    return;
+  }
+  table.innerHTML=`
+    <tr>
+      <th>Quy trình</th><th>Hình thức sai lỗi</th><th>Nguyên nhân</th>
+      <th>S</th><th>O</th><th>D</th><th>RPN</th><th>Đơn vị</th><th>Tiến độ</th><th>Trạng thái</th><th></th>
+    </tr>
+    ${sorted.map(f=>{
+      const lvl=fmeaRpnLevel(f.rpn);
+      return `<tr>
+        <td style="max-width:160px">${f.process||'—'}</td>
+        <td style="max-width:200px;font-weight:600">${f.mode||'—'}</td>
+        <td style="max-width:180px;color:var(--text2)">${f.cause||'—'}</td>
+        <td style="font-family:'JetBrains Mono',monospace;text-align:center">${f.s}</td>
+        <td style="font-family:'JetBrains Mono',monospace;text-align:center">${f.o}</td>
+        <td style="font-family:'JetBrains Mono',monospace;text-align:center">${f.d}</td>
+        <td><span class="rpn-badge ${lvl.cls}">${f.rpn}</span></td>
+        <td style="color:var(--text2)">${f.donvi||'—'}</td>
+        <td>${f.status ? `<span style="font-size:11px;font-weight:600;color:${{ 'Đã thực hiện':'var(--green)', 'Đang thực hiện':'var(--accent)', 'Chưa thực hiện':'var(--amber)', 'Chưa hoàn thành':'var(--red)', 'Không thể thực hiện':'var(--text3)', 'Chưa đến hạn':'var(--text2)' }[f.status]||'var(--text3)'}">${f.status}</span>` : '—'}</td>
+        <td>${f.promoted?'<span class="badge badge-trungbinh">Đã đưa vào DMRR</span>':'<span style="color:var(--text3);font-size:11px">Chưa xử lý</span>'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="openEditFmeaModal(${f.id})" title="Sửa">✎</button>
+          ${!f.promoted?`<button class="btn btn-success btn-sm" onclick="promoteFmeaToRisk(${f.id})" title="Đưa vào Danh mục rủi ro">→ DMRR</button>`:''}
+          <button class="btn btn-danger btn-sm" onclick="deleteFmea(${f.id})" title="Xóa">✕</button>
+        </td>
+      </tr>`;
+    }).join('')}`;
+}
+function exportFmeaXlsx(){
+  if(!state.fmeaItems.length){ toast('Chưa có dữ liệu FMEA để xuất','error'); return; }
+  const wb=XLSX.utils.book_new();
+  const header=['Quy trình','Hình thức sai lỗi','Ảnh hưởng','Nguyên nhân','Kiểm soát hiện tại','S','O','D','RPN','Mức độ','Đơn vị quản lý','Hành động đề xuất','Tiến độ hành động','Đã đưa vào DMRR'];
+  const rows=state.fmeaItems.map(f=>[f.process,f.mode,f.effect,f.cause,f.control,f.s,f.o,f.d,f.rpn,fmeaRpnLevel(f.rpn).label,f.donvi,f.action,f.status||'',f.promoted?'Có':'Không']);
+  const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols']=[{wch:22},{wch:26},{wch:24},{wch:24},{wch:24},{wch:5},{wch:5},{wch:5},{wch:7},{wch:14},{wch:16},{wch:26},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'FMEA');
+  XLSX.writeFile(wb,`FMEA_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Đã xuất file FMEA');
+}
+
+// ═══ DASHBOARD DRILLDOWN ═══
+function closeDrillModal(){ document.getElementById('drill-modal').style.display='none'; }
+
+function openRiskFromDrill(id){
+  closeDrillModal();
+  switchTab('list');
+  document.getElementById('search-input').value='';
+  document.getElementById('filter-loai').value='';
+  document.getElementById('filter-mucdo').value='';
+  state.selectedId = id;
+  saveState(); renderList(); renderDetail();
+  setTimeout(()=>{
+    document.querySelectorAll('.risk-item').forEach(el=>{
+      if(Number(el.dataset.id)===id) el.scrollIntoView({behavior:'smooth', block:'center'});
+    });
+  }, 50);
+}
+
+function renderDrillRisks(title, subtitle, risks){
+  document.getElementById('drill-title').textContent = title;
+  document.getElementById('drill-subtitle').textContent = subtitle || '';
+  const body = document.getElementById('drill-body');
+  if(!risks.length){
+    body.innerHTML = `<div class="drill-empty">Không có rủi ro nào khớp với điều kiện này</div>`;
+  } else {
+    body.innerHTML = risks.map(r=>{
+      const [c] = loaiColor(r.loai);
+      return `<div class="drill-row" onclick="openRiskFromDrill(${r.id})">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);flex-shrink:0">#${r.stt}</div>
+        <div class="drill-row-main">
+          <div class="drill-row-title">${r.ten||'(chưa đặt tên)'}</div>
+          <div class="drill-row-sub">${r.donvi||'—'} · <span style="color:${c}">${r.loai||'—'}</span></div>
+        </div>
+        <span class="badge ${badgeClass(r.mucdo)}">${r.mucdo||'?'}</span>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('drill-modal').style.display='flex';
+}
+
+function renderDrillMeasures(title, subtitle, measures){
+  document.getElementById('drill-title').textContent = title;
+  document.getElementById('drill-subtitle').textContent = subtitle || '';
+  const body = document.getElementById('drill-body');
+  if(!measures.length){
+    body.innerHTML = `<div class="drill-empty">Không có biện pháp nào khớp với điều kiện này</div>`;
+  } else {
+    body.innerHTML = measures.map(m=>{
+      const tdColor = {'Đã thực hiện':'var(--green)','Đang thực hiện':'var(--accent)','Chưa đến hạn':'var(--text2)','Chưa thực hiện':'var(--amber)','Chưa hoàn thành':'var(--red)','Không thể thực hiện':'var(--text3)'}[m.tiendo] || 'var(--text3)';
+      return `<div class="drill-row" onclick="openRiskFromDrillByStt(${m.riskStt})">
+        <div class="drill-row-main">
+          <div class="drill-row-title">#${m.riskStt} ${m.riskTen}</div>
+          <div class="drill-row-sub">${m.bienphap||'—'}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:11px;color:${tdColor};font-weight:600">${m.tiendo||'—'}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${m.thoihan||'—'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('drill-modal').style.display='flex';
+}
+function openRiskFromDrillByStt(stt){
+  const r = state.risks.find(x=>x.stt===stt);
+  if(r) openRiskFromDrill(r.id);
+}
+
+// ─ Drilldown trigger functions, called from dashboard onclick handlers ─
+function drillByMucDo(mucdo){
+  const risks = state.risks.filter(r=>r.mucdo?.toLowerCase().includes(mucdo.toLowerCase()));
+  renderDrillRisks(`Rủi ro mức "${mucdo}"`, `${risks.length} rủi ro`, risks);
+}
+function drillCriticalPlusSignificant(){
+  const risks = state.risks.filter(r=>r.mucdo?.toLowerCase().includes('trọng yếu')||r.mucdo?.toLowerCase().includes('đáng kể'));
+  renderDrillRisks('Rủi ro Trọng yếu + Đáng kể', `${risks.length} rủi ro cần xử lý ưu tiên`, risks);
+}
+function drillByLoai(loai){
+  const risks = state.risks.filter(r=>r.loai===loai);
+  renderDrillRisks(`Nhóm: ${loai}`, `${risks.length} rủi ro`, risks);
+}
+function drillByLoaiMucDo(loai, mucdo){
+  const risks = state.risks.filter(r=>r.loai===loai && r.mucdo?.toLowerCase().includes(mucdo.toLowerCase()));
+  renderDrillRisks(`${loai} × ${mucdo}`, `${risks.length} rủi ro`, risks);
+}
+function drillByDonVi(donvi){
+  const risks = state.risks.filter(r=>(r.donvi||'Chưa xác định').trim()===donvi);
+  renderDrillRisks(`Đơn vị: ${donvi}`, `${risks.length} rủi ro quản lý`, risks);
+}
+function drillByTienDo(tiendo){
+  const allMeasures = state.risks.flatMap(r=>(r.measures||[]).map(m=>({...m, riskTen:r.ten, riskStt:r.stt, riskLoai:r.loai})));
+  const measures = allMeasures.filter(m=>m.tiendo===tiendo);
+  renderDrillMeasures(`Biện pháp: ${tiendo}`, `${measures.length} biện pháp`, measures);
+}
+function drillOverdue(){
+  const allMeasures = state.risks.flatMap(r=>(r.measures||[]).map(m=>({...m, riskTen:r.ten, riskStt:r.stt, riskLoai:r.loai})));
+  const now = new Date();
+  const parseDate = s => {
+    if(!s) return null; s=s.trim();
+    const m1=s.match(/^(\d{1,2})\/(\d{4})$/); if(m1) return new Date(parseInt(m1[2]),parseInt(m1[1])-1,28);
+    const m2=s.match(/^(\d{4})$/); if(m2) return new Date(parseInt(m2[1]),11,31);
+    const m3=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m3) return new Date(parseInt(m3[3]),parseInt(m3[2])-1,parseInt(m3[1]));
+    return null;
+  };
+  const overdue = allMeasures.filter(m=>{
+    if(m.tiendo==='Đã thực hiện') return false;
+    if(m.tiendo==='Đang thực hiện') return false;
+    if(m.tiendo==='Không thể thực hiện') return false;
+    const d = parseDate(m.thoihan); if(!d) return false;
+    return (d - now) < 0;
+  });
+  renderDrillMeasures('Hành động quá hạn', `${overdue.length} biện pháp quá hạn`, overdue);
+}
+function drillNeedAttention(){
+  const allMeasures = state.risks.flatMap(r=>(r.measures||[]).map(m=>({...m, riskTen:r.ten, riskStt:r.stt, riskLoai:r.loai})));
+  const now = new Date();
+  const parseDate = s => {
+    if(!s) return null; s=s.trim();
+    const m1=s.match(/^(\d{1,2})\/(\d{4})$/); if(m1) return new Date(parseInt(m1[2]),parseInt(m1[1])-1,28);
+    const m2=s.match(/^(\d{4})$/); if(m2) return new Date(parseInt(m2[1]),11,31);
+    const m3=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m3) return new Date(parseInt(m3[3]),parseInt(m3[2])-1,parseInt(m3[1]));
+    return null;
+  };
+  const items = allMeasures.filter(m=>{
+    if(m.tiendo==='Chưa hoàn thành') return true;
+    if(m.tiendo==='Đã thực hiện') return false;
+    if(m.tiendo==='Đang thực hiện') return false;
+    if(m.tiendo==='Không thể thực hiện') return false;
+    const d=parseDate(m.thoihan); if(!d) return false;
+    return (d-now)<0;
+  });
+  renderDrillMeasures('Cần chú ý: Quá hạn + Chưa hoàn thành', `${items.length} biện pháp`, items);
+}
+function drillThoiHan(kind){
+  const allMeasures = state.risks.flatMap(r=>(r.measures||[]).map(m=>({...m, riskTen:r.ten, riskStt:r.stt, riskLoai:r.loai})));
+  const now = new Date();
+  const parseDate = s => {
+    if(!s) return null; s=s.trim();
+    const m1=s.match(/^(\d{1,2})\/(\d{4})$/); if(m1) return new Date(parseInt(m1[2]),parseInt(m1[1])-1,28);
+    const m2=s.match(/^(\d{4})$/); if(m2) return new Date(parseInt(m2[1]),11,31);
+    const m3=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m3) return new Date(parseInt(m3[3]),parseInt(m3[2])-1,parseInt(m3[1]));
+    return null;
+  };
+  const isPeriodic = s => { if(!s) return false; const l=s.toLowerCase(); return l.includes('hàng')||l.includes('hằng')||l.includes('liên tục')||l.includes('thường xuyên')||l.includes('định kỳ')||l.includes('quý'); };
+  let bucket = [];
+  allMeasures.forEach(m=>{
+    if(m.tiendo==='Đã thực hiện') return;
+    if(m.tiendo==='Không thể thực hiện') return;
+    if(isPeriodic(m.thoihan)){ if(kind==='periodic') bucket.push(m); return; }
+    if(!m.thoihan || m.thoihan.toLowerCase().includes('liên tục') || m.thoihan.toLowerCase().includes('thường xuyên')){ if(kind==='ongoing') bucket.push(m); return; }
+    const d = parseDate(m.thoihan);
+    if(!d){ if(kind==='ongoing') bucket.push(m); return; }
+    const diff = (d-now)/(1000*60*60*24);
+    if(diff<0){ if(kind==='overdue' && m.tiendo!=='Đang thực hiện') bucket.push(m); }
+    else if(diff<=60){ if(kind==='due_soon') bucket.push(m); }
+    else { if(kind==='future') bucket.push(m); }
+  });
+  const labels={overdue:'Quá hạn', due_soon:'Trong 60 ngày', periodic:'Định kỳ / Thường xuyên', ongoing:'Liên tục / Không hạn', future:'Còn thời gian (>60 ngày)'};
+  renderDrillMeasures(labels[kind]||kind, `${bucket.length} biện pháp`, bucket);
+}
+
+// ═══ ĐÁNH GIÁ HIỆU QUẢ BIỆN PHÁP ═══
+const HQ_MATRIX = {
+  'Đầy đủ':       {'Hiệu quả':'Hiệu quả', 'Một phần':'Hiệu quả một phần', 'Không hiệu quả':'Không hiệu quả'},
+  'Một phần':     {'Hiệu quả':'Hiệu quả một phần', 'Một phần':'Hiệu quả một phần', 'Không hiệu quả':'Không hiệu quả'},
+  'Không đầy đủ': {'Hiệu quả':'Không hiệu quả', 'Một phần':'Không hiệu quả', 'Không hiệu quả':'Không hiệu quả'},
+};
+const HQ_COLORS = {
+  'Hiệu quả':'var(--green)', 'Hiệu quả một phần':'var(--amber)', 'Không hiệu quả':'var(--red)'
+};
+function calcHieuQua(thietke, vanhanh){
+  if(!thietke || !vanhanh) return '';
+  return HQ_MATRIX[thietke]?.[vanhanh] || '';
+}
+function updateHieuQua(idx){
+  const m = modalMeasures[idx];
+  if(!m) return;
+  const hq = calcHieuQua(m.thietke, m.vanhanh);
+  m.hieuqua = hq;
+  const el = document.getElementById(`hq-preview-${idx}`);
+  if(!el) return;
+  el.textContent = hq || '—';
+  el.style.color = HQ_COLORS[hq] || 'var(--text3)';
+  el.style.background = hq ? HQ_COLORS[hq].replace(')',',0.12)').replace('var(','rgba(').replace('--green','34,197,94').replace('--amber','245,158,11').replace('--red','239,68,68') : 'var(--surface2)';
+  el.style.borderColor = HQ_COLORS[hq] || 'var(--border)';
+}
+
+let hq_allRows = []; // cache để filter không cần rebuild
+
+function filterHieuQua(){
+  const q    = (document.getElementById('hq-search')?.value||'').toLowerCase().trim();
+  const fMD  = document.getElementById('hq-f-mucdo')?.value||'';
+  const fTD  = document.getElementById('hq-f-tiendo')?.value||'';
+  const fTK  = document.getElementById('hq-f-thietke')?.value||'';
+  const fVH  = document.getElementById('hq-f-vanhanh')?.value||'';
+  const fHQ  = document.getElementById('hq-f-hieuqua')?.value||'';
+
+  const filtered = hq_allRows.filter(m=>{
+    if(q && !`${m.riskTen||''} ${m.bienphap||''} ${m.donvi||''}`.toLowerCase().includes(q)) return false;
+    if(fMD && m.riskMucDo !== fMD) return false;
+    if(fTD && m.tiendo !== fTD) return false;
+    if(fTK && m.thietke !== fTK) return false;
+    if(fVH && m.vanhanh !== fVH) return false;
+    if(fHQ && (m.hieuqua||calcHieuQua(m.thietke,m.vanhanh)) !== fHQ) return false;
+    return true;
+  });
+
+  const countEl = document.getElementById('hq-filter-count');
+  if(countEl){
+    const hasFilter = q||fMD||fTD||fTK||fVH||fHQ;
+    countEl.textContent = hasFilter ? `${filtered.length} / ${hq_allRows.length} biện pháp` : '';
+  }
+  renderHieuQuaTable(filtered);
+}
+
+function clearHieuQuaFilter(){
+  ['hq-search','hq-f-mucdo','hq-f-tiendo','hq-f-thietke','hq-f-vanhanh','hq-f-hieuqua'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  filterHieuQua();
+}
+
+function renderHieuQuaTable(rows){
+  const table = document.getElementById('hq-table');
+  if(!rows.length){
+    table.innerHTML=`<tr><td colspan="10" style="padding:40px;text-align:center;color:var(--text3)">Không có biện pháp nào khớp với bộ lọc</td></tr>`;
+    return;
+  }
+  table.innerHTML=`
+    <tr>
+      <th style="min-width:40px">#</th>
+      <th style="min-width:160px">Tên rủi ro</th>
+      <th>Mức độ</th>
+      <th style="min-width:200px">Biện pháp</th>
+      <th style="min-width:120px">Đơn vị TH</th>
+      <th>Tiến độ</th>
+      <th style="min-width:130px">Thiết kế</th>
+      <th style="min-width:130px">Vận hành</th>
+      <th style="min-width:130px">Hiệu quả</th>
+      <th style="min-width:180px">Hoạt động tiếp theo</th>
+    </tr>
+    ${rows.map((m,rowIdx)=>{
+      const hq = m.hieuqua || calcHieuQua(m.thietke, m.vanhanh);
+      const hqColor = HQ_COLORS[hq]||'var(--text3)';
+      const mdColor = MUCDO_COLORS[m.riskMucDo]||'var(--text3)';
+      const tdColor = {'Đã thực hiện':'var(--green)','Đang thực hiện':'var(--accent)','Chưa thực hiện':'var(--amber)','Chưa hoàn thành':'var(--red)','Không thể thực hiện':'var(--text3)','Chưa đến hạn':'var(--text2)'}[m.tiendo]||'var(--text3)';
+      const bpEsc = (m.bienphap||'').replace(/'/g,"\\'");
+      const selStyle = `width:100%;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px`;
+      return `<tr id="hq-row-${rowIdx}">
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${m.riskStt}</td>
+        <td style="font-weight:600;cursor:pointer;color:var(--accent)" onclick="openRiskFromDrill(${m.riskId})" title="Mở rủi ro">${m.riskTen||'—'}</td>
+        <td><span style="font-weight:700;font-size:11px;color:${mdColor}">${m.riskMucDo||'—'}</span></td>
+        <td style="color:var(--text2);font-size:12px">${m.bienphap||'—'}</td>
+        <td style="color:var(--text2);font-size:12px">${m.donvi||'—'}</td>
+        <td><span style="font-size:11px;font-weight:600;color:${tdColor}">${m.tiendo||'—'}</span></td>
+        <td>
+          <select style="${selStyle}" onchange="saveThietKeVanHanh(${m.riskId},'${bpEsc}','thietke',this.value,${rowIdx})">
+            <option value="" ${!m.thietke?'selected':''}>-- Chọn --</option>
+            <option ${m.thietke==='Đầy đủ'?'selected':''}>Đầy đủ</option>
+            <option ${m.thietke==='Một phần'?'selected':''}>Một phần</option>
+            <option ${m.thietke==='Không đầy đủ'?'selected':''}>Không đầy đủ</option>
+          </select>
+        </td>
+        <td>
+          <select style="${selStyle}" onchange="saveThietKeVanHanh(${m.riskId},'${bpEsc}','vanhanh',this.value,${rowIdx})">
+            <option value="" ${!m.vanhanh?'selected':''}>-- Chọn --</option>
+            <option ${m.vanhanh==='Hiệu quả'?'selected':''}>Hiệu quả</option>
+            <option ${m.vanhanh==='Một phần'?'selected':''}>Một phần</option>
+            <option ${m.vanhanh==='Không hiệu quả'?'selected':''}>Không hiệu quả</option>
+          </select>
+        </td>
+        <td id="hq-cell-${rowIdx}"><span style="font-weight:700;font-size:12px;color:${hqColor}">${hq||'—'}</span></td>
+        <td>
+          <input type="text" value="${(m.hoatdongtiep||'').replace(/"/g,'&quot;')}"
+            placeholder="Nhập hoạt động tiếp theo..."
+            style="width:100%;padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px"
+            onchange="saveHoatDongTiep(${m.riskId},'${bpEsc}',this.value)">
+        </td>
+      </tr>`;
+    }).join('')}`;
+}
+
+function renderHieuQua(){
+  hq_allRows = state.risks.flatMap(r=>
+    (r.measures||[]).map(m=>({
+      riskId: r.id, riskStt: r.stt, riskTen: r.ten, riskMucDo: r.mucdo, riskLoai: r.loai,
+      ...m
+    }))
+  );
+  renderHieuQuaStats();
+  filterHieuQua();
+}
+
+function saveHoatDongTiep(riskId, bienphap, value){
+  const r = state.risks.find(x=>x.id===riskId); if(!r) return;
+  const m = (r.measures||[]).find(x=>x.bienphap===bienphap); if(!m) return;
+  m.hoatdongtiep = value;
+  saveState();
+  sbSet('risks', state.risks).catch(()=>{});
+}
+
+function saveThietKeVanHanh(riskId, bienphap, field, value, rowIdx){
+  const r = state.risks.find(x=>x.id===riskId); if(!r) return;
+  const m = (r.measures||[]).find(x=>x.bienphap===bienphap); if(!m) return;
+  m[field] = value;
+  const hq = calcHieuQua(m.thietke, m.vanhanh);
+  m.hieuqua = hq;
+  saveState();
+  sbSet('risks', state.risks).catch(()=>{});
+  // Cập nhật ô Hiệu quả ngay lập tức mà không render lại cả bảng
+  const cell = document.getElementById(`hq-cell-${rowIdx}`);
+  if(cell){
+    const color = HQ_COLORS[hq]||'var(--text3)';
+    cell.innerHTML = `<span style="font-weight:700;font-size:12px;color:${color}">${hq||'—'}</span>`;
+  }
+  // Cập nhật KPI stats
+  renderHieuQuaStats();
+}
+
+function exportHieuQuaXlsx(){
+  const allRows = state.risks.flatMap(r=>
+    (r.measures||[]).map(m=>({
+      stt:r.stt, ten:r.ten, mucdo:r.mucdo, loai:r.loai,
+      bienphap:m.bienphap, donvi:m.donvi, thoihan:m.thoihan,
+      tiendo:m.tiendo, thietke:m.thietke, vanhanh:m.vanhanh,
+      hieuqua:m.hieuqua||calcHieuQua(m.thietke,m.vanhanh),
+      hoatdongtiep:m.hoatdongtiep
+    }))
+  );
+  if(!allRows.length){ toast('Chưa có dữ liệu biện pháp để xuất','error'); return; }
+  const wb = XLSX.utils.book_new();
+  const header = ['STT','Tên rủi ro','Mức độ','Loại rủi ro','Biện pháp','Đơn vị','Thời hạn','Tiến độ','Thiết kế','Vận hành','Hiệu quả','Hoạt động tiếp theo'];
+  const rows = allRows.map(r=>[r.stt,r.ten,r.mucdo,r.loai,r.bienphap,r.donvi,r.thoihan,r.tiendo,r.thietke,r.vanhanh,r.hieuqua,r.hoatdongtiep]);
+  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols']=[{wch:5},{wch:28},{wch:12},{wch:20},{wch:30},{wch:16},{wch:12},{wch:18},{wch:14},{wch:14},{wch:20},{wch:28}];
+  XLSX.utils.book_append_sheet(wb,ws,'Đánh giá hiệu quả');
+  XLSX.writeFile(wb,`Danh_gia_hieu_qua_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Đã xuất file đánh giá hiệu quả');
+}
+
+// ═══ DASHBOARD ═══
+function renderDashboard(){
+  const risks = state.risks;
+  const el = document.getElementById('dashboard-root');
+  if(!risks.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:8px">Chưa có dữ liệu</div><div style="color:var(--text3)">Import hoặc thêm rủi ro để xem dashboard</div></div>`;
+    return;
+  }
+
+  const allMeasures = risks.flatMap(r=>(r.measures||[]).map(m=>({...m, riskTen:r.ten, riskStt:r.stt, riskLoai:r.loai})));
+  const totalMeasures = allMeasures.length;
+
+  // ── KPI counts ──
+  const byMucDo = cnt => risks.filter(r=>r.mucdo?.toLowerCase().includes(cnt.toLowerCase())).length;
+  const kpi_ty  = byMucDo('trọng yếu');
+  const kpi_dk  = byMucDo('đáng kể');
+  const kpi_tb  = byMucDo('trung bình');
+  const kpi_t   = byMucDo('thấp');
+  const kpi_total = risks.length;
+  const done_count = allMeasures.filter(m=>m.tiendo==='Đã thực hiện').length;
+  const doing_count = allMeasures.filter(m=>m.tiendo==='Đang thực hiện').length;
+  const todo_count = allMeasures.filter(m=>m.tiendo==='Chưa thực hiện').length;
+  const late_count = allMeasures.filter(m=>m.tiendo==='Chưa hoàn thành').length;
+  const pending_count = allMeasures.filter(m=>m.tiendo==='Chưa đến hạn').length;
+  const cant_count = allMeasures.filter(m=>m.tiendo==='Không thể thực hiện').length;
+  const done_pct = totalMeasures ? Math.round(done_count/totalMeasures*100) : 0;
+
+  // ── By Loai ──
+  const LOAI_ORDER = ['Rủi ro chuyên môn','Rủi ro hoạt động','Rủi ro tuân thủ','Rủi ro tài chính','Rủi ro CNTT','Rủi ro danh tiếng','Rủi ro chiến lược'];
+  const loai_counts = LOAI_ORDER.map(l=>({name:l, count:risks.filter(r=>r.loai===l).length, color:loaiColor(l)[0]})).filter(x=>x.count>0);
+  const maxLoai = Math.max(...loai_counts.map(x=>x.count), 1);
+
+  // ── By DonVi top 8 ──
+  const dvMap = {};
+  risks.forEach(r=>{ const dv=(r.donvi||'Chưa xác định').trim(); dvMap[dv]=(dvMap[dv]||0)+1; });
+  const dvArr = Object.entries(dvMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxDv = dvArr[0]?.[1] || 1;
+
+  // ── Thời hạn classification ──
+  const now = new Date();
+  const parseDate = s => {
+    if(!s) return null;
+    s = s.trim();
+    // MM/YYYY
+    const m1 = s.match(/^(\d{1,2})\/(\d{4})$/);
+    if(m1) return new Date(parseInt(m1[2]), parseInt(m1[1])-1, 28);
+    // YYYY
+    const m2 = s.match(/^(\d{4})$/);
+    if(m2) return new Date(parseInt(m2[1]), 11, 31);
+    // DD/MM/YYYY
+    const m3 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m3) return new Date(parseInt(m3[2]), parseInt(m3[1])-1, parseInt(m3[0]));
+    return null;
+  };
+  const isPeriodic = s => {
+    if(!s) return false;
+    const l = s.toLowerCase();
+    return l.includes('hàng') || l.includes('hằng') || l.includes('liên tục') || l.includes('thường xuyên') || l.includes('định kỳ') || l.includes('quý');
+  };
+
+  let overdue=[], due_soon=[], periodic_acts=[], ongoing_acts=[], future_acts=[];
+  allMeasures.forEach(m=>{
+    if(m.tiendo==='Đã thực hiện') return;
+    if(m.tiendo==='Không thể thực hiện') return;
+    if(isPeriodic(m.thoihan)){ periodic_acts.push(m); return; }
+    if(!m.thoihan || m.thoihan.toLowerCase().includes('liên tục') || m.thoihan.toLowerCase().includes('thường xuyên')){ ongoing_acts.push(m); return; }
+    const d = parseDate(m.thoihan);
+    if(!d){ ongoing_acts.push(m); return; }
+    const diff = (d - now) / (1000*60*60*24);
+    if(diff < 0 && m.tiendo!=='Đang thực hiện') overdue.push({...m, diff});
+    else if(diff <= 60) due_soon.push({...m, diff});
+    else future_acts.push({...m, diff});
+  });
+  overdue.sort((a,b)=>a.diff-b.diff);
+  due_soon.sort((a,b)=>a.diff-b.diff);
+
+  // ── Heatmap: Loai x MucDo ──
+  const MD = ['Trọng yếu','Đáng kể','Trung bình','Thấp'];
+  const MD_COLORS = {'Trọng yếu':'#C00000','Đáng kể':'#E36C09','Trung bình':'#C8A800','Thấp':'#538135'};
+  const heatmap = LOAI_ORDER.map(l=> MD.map(m=> risks.filter(r=>r.loai===l && r.mucdo?.toLowerCase().includes(m.toLowerCase())).length));
+  const hmMax = Math.max(...heatmap.flat(), 1);
+
+  // ── Build HTML ──
+  el.innerHTML = `
+  <div style="max-width:1300px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div style="font-size:22px;font-weight:700">Dashboard Rủi Ro</div>
+        <div style="color:var(--text2);font-size:13px;margin-top:2px">Cập nhật theo dữ liệu hiện tại — ${risks.length} rủi ro, ${totalMeasures} biện pháp</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="renderDashboard()">↺ Làm mới</button>
+    </div>
+
+    <!-- ROW 1: KPI Cards -->
+    <div class="db-grid-4">
+      ${kpiCard('Tổng rủi ro', kpi_total, 'var(--text)', 'Trong hệ thống hiện tại', `${kpi_ty} trọng yếu · ${kpi_dk} đáng kể`, '⚠', `renderDrillRisks('Tất cả rủi ro', '${kpi_total} rủi ro', state.risks)`)}
+      ${kpiCard('Trọng yếu + Đáng kể', kpi_ty+kpi_dk, '#ff5e6a', 'Cần xử lý ưu tiên', `${Math.round((kpi_ty+kpi_dk)/kpi_total*100)}% tổng số rủi ro`, '🔴', `drillCriticalPlusSignificant()`)}
+      ${kpiCard('Biện pháp hoàn thành', done_count+'/'+totalMeasures, 'var(--green)', 'Tiến độ tổng thể', `${done_pct}% hoàn thành`, '✓', `drillByTienDo('Đã thực hiện')`)}
+      ${kpiCard('Cần chú ý', overdue.length+late_count, 'var(--amber)', 'Quá hạn + chưa hoàn thành', `${overdue.length} quá hạn · ${late_count} chưa xong`, '⚡', `drillNeedAttention()`)}
+    </div>
+
+    <!-- ROW 2: Loai + MucDo -->
+    <div class="db-grid-2">
+      <div class="db-card">
+        <div class="db-card-title">📁 Phân loại theo nhóm rủi ro</div>
+        ${loai_counts.map(x=>`
+          <div class="bar-row db-clickable" onclick="drillByLoai('${x.name.replace(/'/g,"\\'")}')">
+            <div class="bar-label" title="${x.name}">${x.name.replace('Rủi ro ','')}</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${Math.round(x.count/maxLoai*100)}%;background:${x.color}22;border-left:3px solid ${x.color}">
+                <span class="bar-fill-label" style="color:${x.color}">${x.name.replace('Rủi ro ','')}</span>
+              </div>
+            </div>
+            <div class="bar-count">${x.count}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-title">🎯 Phân loại theo mức độ ảnh hưởng</div>
+        <div class="donut-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">${donutSVG([
+            {val:kpi_ty, color:'#C00000', label:'Trọng yếu'},
+            {val:kpi_dk, color:'#E36C09', label:'Đáng kể'},
+            {val:kpi_tb, color:'#C8A800', label:'Trung bình'},
+            {val:kpi_t,  color:'#538135', label:'Thấp'},
+          ], kpi_total)}</svg>
+          <div class="donut-legend">
+            ${[['Trọng yếu','#C00000',kpi_ty],['Đáng kể','#E36C09',kpi_dk],['Trung bình','#C8A800',kpi_tb],['Thấp','#538135',kpi_t]].map(([l,c,v])=>`
+              <div class="legend-item db-clickable" onclick="drillByMucDo('${l}')">
+                <div class="legend-dot" style="background:${c}"></div>
+                <div class="legend-label">${l}</div>
+                <div class="legend-val" style="color:${c}">${v}</div>
+                <div style="font-size:11px;color:var(--text3);margin-left:4px">${kpi_total?Math.round(v/kpi_total*100):0}%</div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          ${[['Trọng yếu','#C00000',kpi_ty],['Đáng kể','#E36C09',kpi_dk],['Trung bình','#C8A800',kpi_tb],['Thấp','#538135',kpi_t]].map(([l,c,v])=>`
+            <div class="bar-row db-clickable" style="margin-bottom:5px" onclick="drillByMucDo('${l}')">
+              <div class="bar-label" style="width:90px">${l}</div>
+              <div class="bar-track" style="height:16px">
+                <div class="bar-fill" style="width:${kpi_total?Math.round(v/kpi_total*100):0}%;background:${c}"></div>
+              </div>
+              <div class="bar-count">${v}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Heatmap + DonVi -->
+    <div class="db-grid-2">
+      <div class="db-card">
+        <div class="db-card-title">🔥 Ma trận rủi ro (Nhóm × Mức độ)</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:separate;border-spacing:3px;font-size:11px">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:4px 6px;color:var(--text3);font-weight:600;width:110px"></th>
+                ${MD.map(m=>`<th style="text-align:center;padding:4px 8px;color:${MD_COLORS[m]};font-weight:700;white-space:nowrap">${m}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${LOAI_ORDER.map((l,li)=>`
+                <tr>
+                  <td style="padding:4px 6px;color:var(--text2);font-size:11px;white-space:nowrap">${l.replace('Rủi ro ','')}</td>
+                  ${heatmap[li].map((v,mi)=>{
+                    const alpha = v === 0 ? 0.04 : 0.15 + (v/hmMax)*0.85;
+                    const bg = v===0 ? 'var(--surface2)' : MD_COLORS[MD[mi]]+Math.round(alpha*255).toString(16).padStart(2,'0');
+                    const clickAttr = v>0 ? ` class="heatmap-td" onclick="drillByLoaiMucDo('${l.replace(/'/g,"\\'")}','${MD[mi]}')"` : '';
+                    return `<td${clickAttr} style="text-align:center;padding:6px;background:${bg};border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:700;color:${v>0?MD_COLORS[MD[mi]]:'var(--text3)'}">${v||'·'}</td>`;
+                  }).join('')}
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-title">🏢 Top đơn vị quản lý</div>
+        ${dvArr.map(([dv,cnt])=>`
+          <div class="bar-row db-clickable" onclick="drillByDonVi('${dv.replace(/'/g,"\\'")}')">
+            <div class="bar-label" title="${dv}">${dv}</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${Math.round(cnt/maxDv*100)}%;background:var(--accent)22;border-left:3px solid var(--accent)">
+                <span class="bar-fill-label" style="color:var(--accent)">${dv}</span>
+              </div>
+            </div>
+            <div class="bar-count">${cnt}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- ROW 4: Tiến độ biện pháp + Thời hạn -->
+    <div class="db-grid-3">
+      <div class="db-card">
+        <div class="db-card-title">✅ Tiến độ biện pháp</div>
+        <div style="display:flex;justify-content:center;margin-bottom:16px">
+          <div style="position:relative;width:110px;height:110px;cursor:pointer" onclick="drillByTienDo('Đã thực hiện')" title="Xem biện pháp đã thực hiện">
+            <svg width="110" height="110" viewBox="0 0 110 110">
+              <circle cx="55" cy="55" r="44" fill="none" stroke="var(--border)" stroke-width="12"/>
+              <circle cx="55" cy="55" r="44" fill="none" stroke="var(--green)" stroke-width="12"
+                stroke-dasharray="${2*Math.PI*44}"
+                stroke-dashoffset="${2*Math.PI*44*(1-done_pct/100)}"
+                stroke-linecap="round"
+                transform="rotate(-90 55 55)"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--green)">${done_pct}%</div>
+              <div style="font-size:10px;color:var(--text3)">hoàn thành</div>
+            </div>
+          </div>
+        </div>
+        ${[
+          ['Đã thực hiện', done_count, 'var(--green)'],
+          ['Đang thực hiện', doing_count, 'var(--accent)'],
+          ['Chưa đến hạn', pending_count, 'var(--text2)'],
+          ['Chưa thực hiện', todo_count, 'var(--amber)'],
+          ['Chưa hoàn thành', late_count, 'var(--red)'],
+          ['Không thể thực hiện', cant_count, 'var(--text3)'],
+        ].map(([l,v,c])=>`
+          <div class="db-clickable" onclick="drillByTienDo('${l}')" style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${c}"></div><span style="font-size:12px;color:var(--text2)">${l}</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden"><div style="width:${totalMeasures?Math.round(v/totalMeasures*100):0}%;height:100%;background:${c};border-radius:3px"></div></div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:${c};width:28px;text-align:right">${v}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-title">📅 Phân loại thời hạn hành động</div>
+        ${[
+          ['Quá hạn', overdue.length, 'var(--red)', '#5a1a1e', '#2b0d10', 'overdue'],
+          ['Trong 60 ngày', due_soon.length, 'var(--amber)', '#4a3010', '#251a07', 'due_soon'],
+          ['Định kỳ / Thường xuyên', periodic_acts.length, 'var(--teal)', '#1a3a50', '#0d1e2a', 'periodic'],
+          ['Liên tục / Không hạn', ongoing_acts.length, 'var(--green)', '#1a4a38', '#0d2219', 'ongoing'],
+          ['Còn thời gian (>60 ngày)', future_acts.length, 'var(--accent)', '#1a2a4a', '#0a1224', 'future'],
+        ].map(([l,v,c,bc,bg,kind])=>`
+          <div class="db-clickable" onclick="drillThoiHan('${kind}')" style="display:flex;align-items:center;justify-content:space-between;background:${bg};border:1px solid ${bc};border-radius:var(--radius);padding:10px 14px;margin-bottom:6px">
+            <div style="font-size:13px;color:var(--text)">${l}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:${c}">${v}</div>
+          </div>`).join('')}
+        <div style="margin-top:8px;font-size:11px;color:var(--text3)">Tổng biện pháp chưa hoàn thành: ${totalMeasures - done_count}</div>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-title db-clickable" onclick="drillNeedAttention()" style="display:inline-flex">🚨 Cần xử lý ngay</div>
+        ${overdue.length === 0 && due_soon.length === 0
+          ? `<div style="text-align:center;padding:20px;color:var(--green);font-size:13px">✓ Không có hành động quá hạn</div>`
+          : `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">${overdue.length} quá hạn · ${due_soon.length} sắp đến hạn</div>`
+            + [...overdue.slice(0,4).map(m=>`
+              <div class="action-row action-overdue" style="cursor:pointer" onclick="openRiskFromDrillByStt(${m.riskStt})">
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;color:var(--red);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">#${m.riskStt} ${m.riskTen}</div>
+                  <div style="color:var(--text2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.bienphap}</div>
+                </div>
+                <div style="font-size:10px;color:var(--red);flex-shrink:0;font-weight:600">${m.thoihan}</div>
+              </div>`),
+            ...due_soon.slice(0,3).map(m=>`
+              <div class="action-row action-soon" style="cursor:pointer" onclick="openRiskFromDrillByStt(${m.riskStt})">
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;color:var(--amber);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">#${m.riskStt} ${m.riskTen}</div>
+                  <div style="color:var(--text2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.bienphap}</div>
+                </div>
+                <div style="font-size:10px;color:var(--amber);flex-shrink:0;font-weight:600">${m.thoihan}</div>
+              </div>`)
+            ].join('')
+        }
+        ${overdue.length > 4 ? `<div class="db-clickable" onclick="drillThoiHan('overdue')" style="font-size:11px;color:var(--text3);margin-top:6px">... và ${overdue.length-4} hành động quá hạn khác</div>` : ''}
+      </div>
+    </div>
+
+    <!-- ROW 5: Periodic actions detail -->
+    ${periodic_acts.length > 0 ? `
+    <div class="db-card" style="margin-bottom:22px">
+      <div class="db-card-title db-clickable" onclick="drillThoiHan('periodic')" style="display:inline-flex">🔄 Hành động định kỳ / thường xuyên (${periodic_acts.length})</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+        ${periodic_acts.slice(0,12).map(m=>`
+          <div class="action-row action-periodic" style="margin-bottom:0;cursor:pointer" onclick="openRiskFromDrillByStt(${m.riskStt})">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;color:var(--teal);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">#${m.riskStt} ${m.riskTen}</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.bienphap}</div>
+            </div>
+            <div style="font-size:10px;color:var(--teal);flex-shrink:0;margin-left:8px;white-space:nowrap">${m.thoihan}</div>
+          </div>`).join('')}
+        ${periodic_acts.length > 12 ? `<div class="db-clickable" onclick="drillThoiHan('periodic')" style="display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3)">+${periodic_acts.length-12} hành động khác</div>` : ''}
+      </div>
+    </div>` : ''}
+
+  </div>`;
+}
+
+function kpiCard(title, value, color, sub, sub2, icon, onclickAttr){
+  const clickable = onclickAttr ? ` kpi-clickable" onclick="${onclickAttr}` : '';
+  return `<div class="db-card${clickable}" style="border-top:3px solid ${color}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px">${title}</div>
+      <div style="font-size:18px">${icon}</div>
+    </div>
+    <div class="kpi-num" style="color:${color}">${value}</div>
+    <div class="kpi-label">${sub}</div>
+    <div class="kpi-sub">${sub2}</div>
+  </div>`;
+}
+
+function donutSVG(segments, total){
+  if(!total) return '<circle cx="60" cy="60" r="44" fill="none" stroke="var(--border)" stroke-width="12"/>';
+  const r = 44, cx = 60, cy = 60;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  let paths = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="12"/>`;
+  segments.forEach(s => {
+    if(!s.val) return;
+    const pct = s.val / total;
+    const dash = pct * circ;
+    const gap  = circ - dash;
+    paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="12"
+      stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
+      stroke-dashoffset="${(-offset * circ / (2*Math.PI * r) * circ + circ/4 * (1/1)).toFixed(2)}"
+      transform="rotate(${offset * 360 / total - 90} ${cx} ${cy})"/>`;
+    offset += s.val;
+  });
+  // Center text
+  paths += `<text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="18" font-weight="700" fill="var(--text)" font-family="JetBrains Mono,monospace">${total}</text>
+    <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="9" fill="var(--text3)">rủi ro</text>`;
+  return paths;
+}
+// ═══ KHỞI ĐỘNG ═══
+(async ()=>{
+  loadState();
+  const saved = loadSession();
+  if(saved && saved.access_token){
+    try {
+      // Verify session còn hợp lệ
+      const profile = await sbGetProfile(saved.user.id, saved.access_token);
+      if(profile){
+        await onLoginSuccess(saved);
+        return;
+      }
+    } catch(e){ /* session hết hạn */ }
+    clearSession();
+  }
+  // Hiện login screen
+})();
+if(state.gasUrl) { try { document.getElementById('gas-url').value=state.gasUrl; } catch(e){} }
+</script>
+</body>
+</html>
