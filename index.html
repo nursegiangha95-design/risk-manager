@@ -1409,6 +1409,7 @@ async function sbGetProfile(userId, token){
     headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+token}
   });
   const d = await r.json();
+  console.log('sbGetProfile status:', r.status, 'data:', d, 'userId:', userId);
   return d[0] || null;
 }
 
