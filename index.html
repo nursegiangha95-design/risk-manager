@@ -184,6 +184,9 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
 .sod-legend{font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;}
 .sync-pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;animation:pulse-dot 2s infinite;}
 @keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sync-saving #sync-dot{background:var(--amber);animation:pulse-dot .8s infinite;}
+.sync-error #sync-dot{background:var(--red);}
+.sync-ok #sync-dot{background:var(--green);}
 
 /* Dashboard drilldown — clickable elements */
 .db-clickable{cursor:pointer;transition:transform .12s, box-shadow .12s;}
@@ -255,8 +258,10 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
       <button class="nav-btn" id="tab-admin" onclick="switchTab('admin')" style="display:none;color:var(--accent)">⚙ Quản trị</button>
     </div>
     <div class="topbar-right">
-      <button class="btn btn-success btn-sm" onclick="syncPull()" id="btn-pull" title="Kéo dữ liệu mới nhất từ cloud">⬇ Pull</button>
-      <button class="btn btn-primary btn-sm" onclick="syncPush()" id="btn-push" title="Đẩy dữ liệu của bạn lên cloud">⬆ Push</button>
+      <div id="sync-indicator" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);padding:0 8px">
+        <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span>
+        <span id="sync-label">Đã đồng bộ</span>
+      </div>
       <div id="user-info" style="display:flex;align-items:center;gap:8px;padding:0 8px;border-left:1px solid var(--border)">
         <div style="text-align:right">
           <div id="user-name" style="font-size:12px;font-weight:600;color:var(--text)"></div>
@@ -1063,24 +1068,26 @@ function saveRisk(){
   if(!ten){toast('Vui lòng nhập tên rủi ro','error');return;}
   document.querySelectorAll('#measures-list textarea').forEach((el,idx)=>{if(modalMeasures[idx])modalMeasures[idx].bienphap=el.value;});
   const data={loai:document.getElementById('f-loai').value,ten,mota:document.getElementById('f-mota').value,nguyen:document.getElementById('f-nguyen').value,anhhuo:document.getElementById('f-anhhuo').value,donvi:document.getElementById('f-donvi').value,kn:document.getElementById('f-kn').value,tacdong:document.getElementById('f-tacdong').value,mucdo:document.getElementById('f-mucdo').value,xuhuong:document.getElementById('f-xuhuong').value,hoatdong:document.getElementById('f-hoatdong').value,kn2:document.getElementById('f-kn2').value,tacdong2:document.getElementById('f-tacdong2').value,mucdo2:document.getElementById('f-mucdo2').value,measures:JSON.parse(JSON.stringify(modalMeasures))};
+  let savedRisk;
   if(state.editingId){
     const idx=state.risks.findIndex(r=>r.id===state.editingId);
-    if(idx>=0) state.risks[idx]={...state.risks[idx],...data};
+    if(idx>=0){ state.risks[idx]={...state.risks[idx],...data}; savedRisk=state.risks[idx]; }
     toast('Đã cập nhật rủi ro');
   } else {
     const stt=state.risks.length?Math.max(...state.risks.map(r=>r.stt||0))+1:1;
-    state.risks.push({id:state.nextId++,stt,...data});
-    state.selectedId=state.nextId-1;
+    savedRisk={id:state.nextId++,stt,...data};
+    state.risks.push(savedRisk);
+    state.selectedId=savedRisk.id;
     toast('Đã thêm rủi ro mới');
   }
   saveState(); closeModal(); renderList(); renderDetail();
-  sbSet('risks', state.risks).catch(()=>{});
+  autoSaveRisk(savedRisk);
 }
 function deleteRisk(id){
   if(!confirm('Xác nhận xóa rủi ro này?')) return;
   state.risks=state.risks.filter(r=>r.id!==id); state.selectedId=null;
   saveState(); renderList(); renderDetail(); toast('Đã xóa rủi ro');
-  sbSet('risks', state.risks).catch(()=>{});
+  autoDeleteRisk(id);
 }
 
 // ═══ IMPORT XLSX ═══
@@ -1608,8 +1615,10 @@ async function onLoginSuccess(session){
   currentUser = profile;
   applyRoleUI();
   document.getElementById('login-screen').style.display='none';
+  loadState(); renderList(); renderDetail();
+  await loadRisksFromCloud();
   renderList(); renderDetail();
-  autoPullOnLoad();
+  startRealtime();
   startAutoPing();
   toast(`Xin chào ${profile.ho_ten||profile.email}!`);
 }
@@ -1632,9 +1641,8 @@ function applyRoleUI(){
 
   document.getElementById('tab-admin').style.display = isAdmin ? '' : 'none';
   if(!isEditor){
-    document.getElementById('btn-push').style.display='none';
     document.querySelectorAll('.btn-primary,.btn-danger').forEach(btn=>{
-      if(btn.id==='login-btn'||btn.id==='u-save-btn') return;
+      if(btn.id==='login-btn'||btn.id==='u-save-btn'||btn.id==='nk-save-btn') return;
       btn.style.display='none';
     });
   }
@@ -1749,96 +1757,131 @@ function setSyncBadge(status) {
   b.style.background = bg; b.style.color = color; b.style.borderColor = border;
 }
 
-async function syncPush() {
-  setSyncBadge('syncing');
-  const btnPush = document.getElementById('btn-push');
-  btnPush.disabled = true;
-  try {
-    const label = prompt('Tên phiên bản (để lưu lịch sử):', `Cập nhật ${new Date().toLocaleDateString('vi-VN')}`);
-    if (!label) { setSyncBadge('cloud'); btnPush.disabled=false; return; }
-
-    // Save version snapshot
-    const newVersion = {id:Date.now(), label, ts:Date.now(), risks:JSON.parse(JSON.stringify(state.risks))};
-    state.versions.push(newVersion);
-
-    // Push risks + fmeaItems + versions to Supabase
-    await sbSet('risks', state.risks);
-    await sbSet('fmeaItems', state.fmeaItems);
-    await sbSet('versions', state.versions);
-    await sbSet('meta', {lastPush: Date.now(), lastLabel: label, pushedBy: navigator.userAgent.slice(0,40)});
-
-    saveState();
-    setSyncBadge('ok');
-    toast(`☁ Đã đẩy lên cloud: "${label}" (${state.risks.length} rủi ro, ${state.fmeaItems.length} mục FMEA)`);
-    setTimeout(()=>setSyncBadge('cloud'), 3000);
-  } catch(e) {
-    setSyncBadge('error');
-    toast('Lỗi push: ' + e.message, 'error');
-    setTimeout(()=>setSyncBadge('cloud'), 4000);
-  }
-  btnPush.disabled = false;
+// ─ Sync status UI ─
+function setSyncStatus(st, label){
+  const ind = document.getElementById('sync-indicator');
+  const lbl = document.getElementById('sync-label');
+  if(ind){ ind.className=''; ind.classList.add('sync-'+st); }
+  if(lbl) lbl.textContent = label;
 }
 
-async function syncPull() {
-  setSyncBadge('syncing');
-  const btnPull = document.getElementById('btn-pull');
-  btnPull.disabled = true;
-  try {
-    const [risks, fmeaItems, versions, meta] = await Promise.all([
-      sbGet('risks'), sbGet('fmeaItems'), sbGet('versions'), sbGet('meta')
-    ]);
-
-    if (!risks) { toast('Cloud chưa có dữ liệu — hãy Push trước', 'error'); setSyncBadge('offline'); btnPull.disabled=false; return; }
-
-    state.risks = risks;
-    state.fmeaItems = fmeaItems || state.fmeaItems || [];
-    state.versions = versions || state.versions;
-    state.nextId = risks.length ? Math.max(...risks.map(r=>r.id||0))+1 : 1;
-    state.nextFmeaId = state.fmeaItems.length ? Math.max(...state.fmeaItems.map(f=>f.id||0))+1 : 1;
-    state.selectedId = null;
-
-    saveState(); renderList(); renderDetail();
-    if (state.currentTab==='versions') renderVersions();
-    if (state.currentTab==='fmea') renderFmea();
-
-    setSyncBadge('ok');
-    const who = meta?.lastLabel || '?';
-    const when = meta?.lastPush ? new Date(meta.lastPush).toLocaleString('vi-VN') : '?';
-    toast(`☁ Đã kéo về: ${risks.length} rủi ro, ${state.fmeaItems.length} mục FMEA — phiên bản "${who}" lúc ${when}`);
-    setTimeout(()=>setSyncBadge('cloud'), 3000);
-  } catch(e) {
-    setSyncBadge('error');
-    toast('Lỗi pull: ' + e.message, 'error');
-    setTimeout(()=>setSyncBadge('cloud'), 4000);
-  }
-  btnPull.disabled = false;
+// ─ Supabase REST cho bảng risks (row-per-record) ─
+async function sbRisksGetAll(){
+  const r = await fetch(SB_URL+"/rest/v1/risks?select=*&order=stt", {headers:SB_HEADERS});
+  if(!r.ok) throw new Error("Lỗi tải dữ liệu");
+  return await r.json();
+}
+async function sbRiskUpsert(risk){
+  const r = await fetch(SB_URL+"/rest/v1/risks", {
+    method:"POST",
+    headers:{...SB_HEADERS,"Prefer":"resolution=merge-duplicates"},
+    body: JSON.stringify({...risk, updated_at: new Date().toISOString()})
+  });
+  if(!r.ok){ const e=await r.json(); throw new Error(e.message||"Lỗi lưu rủi ro"); }
+}
+async function sbRiskDelete(id){
+  const r = await fetch(SB_URL+"/rest/v1/risks?id=eq."+id, {method:"DELETE", headers:SB_HEADERS});
+  if(!r.ok) throw new Error("Lỗi xóa rủi ro");
 }
 
-// Auto-pull on load
-async function autoPullOnLoad() {
+// ─ Supabase REST cho risk_store (fmea, versions, meta) ─
+async function sbGet(key) {
+  const r = await fetch(SB_URL+"/rest/v1/risk_store?key=eq."+encodeURIComponent(key)+"&select=value", {headers:SB_HEADERS});
+  if (!r.ok) throw new Error("GET failed: " + r.status);
+  const d = await r.json();
+  return d.length ? JSON.parse(d[0].value) : null;
+}
+async function sbSet(key, value) {
+  const r = await fetch(SB_URL+"/rest/v1/risk_store", {
+    method:"POST",
+    headers:{...SB_HEADERS,"Prefer":"resolution=merge-duplicates"},
+    body: JSON.stringify({key, value: JSON.stringify(value), updated_at: new Date().toISOString()})
+  });
+  if (!r.ok) throw new Error("SET failed: " + r.status);
+}
+
+// ─ Auto-save risk ─
+async function autoSaveRisk(risk){
+  setSyncStatus("saving","Đang lưu...");
   try {
-    const meta = await sbGet('meta');
-    if (!meta) return;
-    const cloudTs = meta.lastPush || 0;
-    const localTs = state.versions.length ? Math.max(...state.versions.map(v=>v.ts||0)) : 0;
-    if (cloudTs > localTs) {
-      setSyncBadge('syncing');
-      await syncPull();
-      toast('☁ Tự động kéo dữ liệu mới nhất từ cloud');
+    await sbRiskUpsert(risk);
+    setSyncStatus("ok","Đã đồng bộ");
+  } catch(e){
+    setSyncStatus("error","Lỗi: "+e.message);
+    toast("Lỗi lưu: "+e.message,"error");
+  }
+}
+async function autoDeleteRisk(id){
+  setSyncStatus("saving","Đang xóa...");
+  try {
+    await sbRiskDelete(id);
+    setSyncStatus("ok","Đã đồng bộ");
+  } catch(e){
+    setSyncStatus("error","Lỗi xóa");
+  }
+}
+
+// ─ Load risks từ cloud lúc khởi động ─
+async function loadRisksFromCloud(){
+  try {
+    setSyncStatus("saving","Đang tải...");
+    const rows = await sbRisksGetAll();
+    if(rows.length){
+      state.risks = rows;
+      state.nextId = Math.max(...rows.map(r=>r.id||0))+1;
+      saveState();
     }
-  } catch(e) { setSyncBadge('offline'); }
+    setSyncStatus("ok","Đã đồng bộ");
+  } catch(e){
+    setSyncStatus("error","Không kết nối được");
+  }
 }
 
-// ═══ AUTO-PING KEEP-ALIVE (chống Supabase free-tier tự pause do không hoạt động) ═══
-const PING_INTERVAL_MS = 1000 * 60 * 60 * 12; // mỗi 12 giờ khi app đang mở
+// ─ Realtime listener ─
+let realtimeWs = null;
+function startRealtime(){
+  const wsUrl = "wss://"+SB_URL.replace("https://","")+"/realtime/v1/websocket?apikey="+SB_KEY+"&vsn=1.0.0";
+  try {
+    realtimeWs = new WebSocket(wsUrl);
+    realtimeWs.onopen = ()=>{
+      realtimeWs.send(JSON.stringify({
+        topic:"realtime:public:risks", event:"phx_join",
+        payload:{config:{broadcast:{self:false},presence:{key:""},postgres_changes:[{event:"*",schema:"public",table:"risks"}]}},
+        ref:"1"
+      }));
+    };
+    realtimeWs.onmessage = (e)=>{
+      try {
+        const msg = JSON.parse(e.data);
+        const data = msg.payload && msg.payload.data;
+        if(data && data.type){
+          const type=data.type, record=data.record, old=data.old_record;
+          if(type==="INSERT"||type==="UPDATE"){
+            if(!record||!record.id) return;
+            const idx=state.risks.findIndex(r=>r.id===record.id);
+            if(idx>=0) state.risks[idx]=record; else state.risks.push(record);
+            state.risks.sort((a,b)=>(a.stt||0)-(b.stt||0));
+            state.nextId=Math.max(state.nextId,record.id+1);
+          } else if(type==="DELETE"){
+            if(old&&old.id) state.risks=state.risks.filter(r=>r.id!==old.id);
+          }
+          saveState(); renderList();
+          if(state.currentTab==="dashboard") renderDashboard();
+          setSyncStatus("ok","Đã đồng bộ");
+        }
+        if(msg.event==="heartbeat"){ realtimeWs.send(JSON.stringify({topic:"phoenix",event:"heartbeat",payload:{},ref:"hb"})); }
+      } catch(err){}
+    };
+    realtimeWs.onclose = ()=>{ setTimeout(startRealtime,5000); };
+    realtimeWs.onerror = ()=>{ realtimeWs.close(); };
+  } catch(e){}
+}
+
+// ─ Keep-alive ping ─
+const PING_INTERVAL_MS = 1000*60*60*12;
 let pingTimer = null;
 async function sbPing(){
-  try {
-    await fetch(`${SB_URL}/rest/v1/risk_store?select=key&limit=1`, {headers:SB_HEADERS});
-    const el=document.getElementById('ping-indicator');
-    if(el){ el.title='Lần ping cuối: '+new Date().toLocaleString('vi-VN'); }
-    localStorage.setItem('riskapp_last_ping', String(Date.now()));
-  } catch(e) { /* im lặng - không làm phiền người dùng nếu mất mạng tạm thời */ }
+  try { await fetch(SB_URL+"/rest/v1/risk_store?select=key&limit=1", {headers:SB_HEADERS}); } catch(e){}
 }
 function startAutoPing(){
   sbPing();
@@ -1846,10 +1889,24 @@ function startAutoPing(){
   pingTimer = setInterval(sbPing, PING_INTERVAL_MS);
 }
 
-// ═══ GAS SYNC (giữ lại cho tương thích) ═══
-function saveGASUrl(){ toast('App đã dùng Supabase — không cần Google Apps Script nữa'); }
+// ─ Versions ─
+async function saveVersion(label){
+  state.versions = state.versions||[];
+  state.versions.push({id:Date.now(),label,ts:Date.now(),risks:JSON.parse(JSON.stringify(state.risks))});
+  saveState();
+  await sbSet("versions",state.versions).catch(()=>{});
+  if(state.currentTab==="versions") renderVersions();
+  toast("Đã lưu phiên bản: "+label);
+}
+
+// ─ Compat stubs ─
+function saveGASUrl(){ toast("App đã dùng auto-sync — không cần Google Apps Script"); }
 function renderTopbar(){}
-async function syncGAS(){ await syncPush(); }
+async function syncGAS(){ toast("Đã chuyển sang auto-sync"); }
+async function syncPush(){ await saveVersion(prompt("Tên phiên bản:","Snapshot "+new Date().toLocaleDateString("vi-VN"))||"Snapshot"); }
+async function syncPull(){ await loadRisksFromCloud(); renderList(); renderDetail(); }
+async function autoPullOnLoad(){ await loadRisksFromCloud(); renderList(); renderDetail(); }
+
 
 // ═══ MA TRẬN 5×5 KHẢ NĂNG × ẢNH HƯỞNG ═══
 const MATRIX_KN  = ['Rất khó xảy ra','Khó xảy ra','Có thể','Rất có thể','Gần như chắc chắn'];
@@ -1992,7 +2049,7 @@ function promoteFmeaToRisk(id){
   f.promoted=true; f.promotedRiskId=newRisk.id;
   saveState(); renderList(); renderDetail(); renderFmea();
   toast(`Đã đưa vào Danh mục rủi ro với mức "${mucdo}" (#${stt})`);
-  sbSet('risks', state.risks).catch(()=>{});
+  autoSaveRisk(newRisk);
   sbSet('fmeaItems', state.fmeaItems).catch(()=>{});
 }
 function renderFmea(){
@@ -2356,7 +2413,7 @@ function saveHoatDongTiep(riskId, bienphap, value){
   const m = (r.measures||[]).find(x=>x.bienphap===bienphap); if(!m) return;
   m.hoatdongtiep = value;
   saveState();
-  sbSet('risks', state.risks).catch(()=>{});
+  autoSaveRisk(r);
 }
 
 function saveThietKeVanHanh(riskId, bienphap, field, value, rowIdx){
@@ -2366,7 +2423,7 @@ function saveThietKeVanHanh(riskId, bienphap, field, value, rowIdx){
   const hq = calcHieuQua(m.thietke, m.vanhanh);
   m.hieuqua = hq;
   saveState();
-  sbSet('risks', state.risks).catch(()=>{});
+  autoSaveRisk(r);
   // Cập nhật ô Hiệu quả ngay lập tức mà không render lại cả bảng
   const cell = document.getElementById(`hq-cell-${rowIdx}`);
   if(cell){
@@ -2981,16 +3038,14 @@ function donutSVG(segments, total){
   const saved = loadSession();
   if(saved && saved.access_token){
     try {
-      // Verify session còn hợp lệ
       const profile = await sbGetProfile(saved.user.id, saved.access_token);
       if(profile){
         await onLoginSuccess(saved);
         return;
       }
-    } catch(e){ /* session hết hạn */ }
+    } catch(e){}
     clearSession();
   }
-  // Hiện login screen
 })();
 if(state.gasUrl) { try { document.getElementById('gas-url').value=state.gasUrl; } catch(e){} }
 </script>
