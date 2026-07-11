@@ -248,6 +248,7 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
       <button class="nav-btn active" id="tab-list" onclick="switchTab('list')">Danh sách rủi ro</button>
       <button class="nav-btn" id="tab-fmea" onclick="switchTab('fmea')">🧪 FMEA</button>
       <button class="nav-btn" id="tab-hieuqua" onclick="switchTab('hieuqua')">📋 Đánh giá hiệu quả</button>
+      <button class="nav-btn" id="tab-nckh" onclick="switchTab('nckh')">🔬 NCKH</button>
       <button class="nav-btn" id="tab-versions" onclick="switchTab('versions')">Phiên bản</button>
       <button class="nav-btn" id="tab-compare" onclick="switchTab('compare')">So sánh</button>
       <button class="nav-btn" id="tab-guide" onclick="switchTab('guide')">Dùng chung</button>
@@ -386,6 +387,41 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
         </div>
       </div>
 
+      <!-- NCKH TAB -->
+      <div id="tab-content-nckh" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:20px;font-weight:700">🔬 Nghiên cứu khoa học</div>
+            <div style="color:var(--text2);font-size:13px;margin-top:2px">Quản lý đề tài nghiên cứu và tài liệu báo cáo</div>
+          </div>
+          <div style="display:flex;gap:8px" id="nckh-admin-btns">
+            <button class="btn btn-primary btn-sm" onclick="openNckhModal()">+ Thêm đề tài</button>
+          </div>
+        </div>
+        <div class="stats-grid" id="nckh-stats"></div>
+        <!-- Filter bar -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px">
+          <div style="flex:1;min-width:200px;position:relative">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px">🔍</span>
+            <input type="text" id="nckh-search" placeholder="Tìm tên đề tài, chủ đề tài, cộng sự..."
+              style="width:100%;padding:7px 10px 7px 30px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px"
+              oninput="filterNckh()">
+          </div>
+          <select id="nckh-f-tinhtrang" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px" onchange="filterNckh()">
+            <option value="">Tất cả tình trạng</option>
+            <option>Đã đăng ký</option>
+            <option>Đã duyệt đề cương</option>
+            <option>Đã hoàn thành kết quả</option>
+            <option>Đã báo cáo đề tài</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="clearNckhFilter()">✕ Xóa lọc</button>
+          <span id="nckh-count" style="font-size:12px;color:var(--text3)"></span>
+        </div>
+        <div class="fmea-card" style="padding:0;overflow-x:auto">
+          <table class="fmea-table" id="nckh-table"></table>
+        </div>
+      </div>
+
       <div id="tab-content-versions" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
@@ -512,6 +548,60 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeUserModal()">Hủy</button>
       <button class="btn btn-primary" id="u-save-btn" onclick="saveUser()">Tạo tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NCKH -->
+<div class="modal-overlay" id="nckh-modal" style="display:none" onclick="if(event.target===this)closeNckhModal()">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div class="modal-title" id="nckh-modal-title">Thêm đề tài NCKH</div>
+      <button class="btn btn-icon btn-ghost" onclick="closeNckhModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div><label>Tên đề tài *</label><input type="text" id="nk-ten" placeholder="Nhập tên đề tài nghiên cứu"></div>
+        <div class="form-row">
+          <div><label>Chủ đề tài</label><input type="text" id="nk-chu" placeholder="Họ tên chủ đề tài"></div>
+          <div><label>Cộng sự</label><input type="text" id="nk-congsu" placeholder="Họ tên các cộng sự (cách nhau bởi dấu phẩy)"></div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Tình trạng</label>
+            <select id="nk-tinhtrang">
+              <option value="">-- Chọn --</option>
+              <option>Đã đăng ký</option>
+              <option>Đã duyệt đề cương</option>
+              <option>Đã hoàn thành kết quả</option>
+              <option>Đã báo cáo đề tài</option>
+            </select>
+          </div>
+          <div><label>Ngày báo cáo</label><input type="date" id="nk-ngay"></div>
+        </div>
+        <div><label>Nơi báo cáo</label><input type="text" id="nk-noi" placeholder="VD: Hội đồng khoa học bệnh viện, Tạp chí Y học..."></div>
+        <div><label>Ghi chú</label><textarea id="nk-ghichu" placeholder="Ghi chú thêm..."></textarea></div>
+        <div>
+          <label>File báo cáo (PDF)</label>
+          <div id="nk-file-current" style="display:none;margin-bottom:8px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;display:flex;align-items:center;gap:8px">
+            <span>📄</span><span id="nk-file-name-display"></span>
+            <button class="btn btn-ghost btn-sm" onclick="removeNckhFile()" style="margin-left:auto">✕ Xóa file</button>
+          </div>
+          <input type="file" id="nk-file" accept=".pdf" style="display:none" onchange="handleNckhFile(event)">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('nk-file').click()">📎 Chọn file PDF</button>
+          <span id="nk-file-label" style="font-size:12px;color:var(--text3);margin-left:8px">Chưa chọn file</span>
+          <div id="nk-upload-progress" style="display:none;margin-top:8px">
+            <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden">
+              <div id="nk-progress-bar" style="height:100%;background:var(--accent);width:0%;transition:width .3s"></div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px" id="nk-progress-text">Đang tải lên...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeNckhModal()">Hủy</button>
+      <button class="btn btn-primary" id="nk-save-btn" onclick="saveNckh()">Lưu đề tài</button>
     </div>
   </div>
 </div>
@@ -753,7 +843,7 @@ function norm(s){ return s?String(s).trim():'';}
 // ═══ TABS ═══
 function switchTab(tab){
   state.currentTab=tab;
-  ['dashboard','list','fmea','hieuqua','versions','compare','guide','admin'].forEach(t=>{
+  ['dashboard','list','fmea','hieuqua','nckh','versions','compare','guide','admin'].forEach(t=>{
     const btn=document.getElementById(`tab-${t}`);
     const content=document.getElementById(`tab-content-${t}`);
     if(btn) btn.classList.toggle('active',t===tab);
@@ -765,6 +855,7 @@ function switchTab(tab){
   if(tab==='dashboard') renderDashboard();
   if(tab==='fmea') renderFmea();
   if(tab==='hieuqua') renderHieuQua();
+  if(tab==='nckh') renderNckh();
   if(tab==='admin') renderAdminTab();
 }
 
@@ -2305,6 +2396,256 @@ function exportHieuQuaXlsx(){
   XLSX.utils.book_append_sheet(wb,ws,'Đánh giá hiệu quả');
   XLSX.writeFile(wb,`Danh_gia_hieu_qua_${new Date().toISOString().slice(0,10)}.xlsx`);
   toast('Đã xuất file đánh giá hiệu quả');
+}
+
+// ═══ NCKH MODULE ═══
+const NCKH_BUCKET = 'nckh-files';
+let nckh_all = [];
+let nckh_editingId = null;
+let nckh_pendingFile = null; // file chờ upload
+let nckh_removeFile = false; // cờ xóa file cũ
+
+const TINHTRANG_COLORS = {
+  'Đã đăng ký':             'var(--text2)',
+  'Đã duyệt đề cương':      'var(--accent)',
+  'Đã hoàn thành kết quả':  'var(--amber)',
+  'Đã báo cáo đề tài':      'var(--green)',
+};
+
+// ─ Supabase REST helpers cho NCKH ─
+async function nckhGetAll(){
+  const r = await fetch(`${SB_URL}/rest/v1/nckh?select=*&order=created_at.desc`, {headers:SB_HEADERS});
+  return r.ok ? await r.json() : [];
+}
+async function nckhInsert(data){
+  const r = await fetch(`${SB_URL}/rest/v1/nckh`, {
+    method:'POST', headers:{...SB_HEADERS,'Prefer':'return=representation'},
+    body: JSON.stringify(data)
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.message||'Lỗi thêm đề tài');
+  return d[0];
+}
+async function nckhUpdate(id, data){
+  const r = await fetch(`${SB_URL}/rest/v1/nckh?id=eq.${id}`, {
+    method:'PATCH', headers:{...SB_HEADERS,'Prefer':'return=representation'},
+    body: JSON.stringify({...data, updated_at: new Date().toISOString()})
+  });
+  if(!r.ok){ const e=await r.json(); throw new Error(e.message||'Lỗi cập nhật'); }
+}
+async function nckhDelete(id){
+  const r = await fetch(`${SB_URL}/rest/v1/nckh?id=eq.${id}`, {method:'DELETE', headers:SB_HEADERS});
+  if(!r.ok) throw new Error('Lỗi xóa đề tài');
+}
+
+// ─ Storage helpers ─
+async function uploadNckhFile(file, oldPath){
+  if(oldPath) await deleteNckhFile(oldPath).catch(()=>{});
+  const ext = file.name.split('.').pop();
+  const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const r = await fetch(`${SB_URL}/storage/v1/object/${NCKH_BUCKET}/${path}`, {
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':file.type},
+    body: file
+  });
+  if(!r.ok){ const e=await r.json(); throw new Error(e.message||'Lỗi upload file'); }
+  const url = `${SB_URL}/storage/v1/object/public/${NCKH_BUCKET}/${path}`;
+  return {url, path, name:file.name};
+}
+async function deleteNckhFile(path){
+  await fetch(`${SB_URL}/storage/v1/object/${NCKH_BUCKET}/${path}`, {
+    method:'DELETE',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  });
+}
+
+// ─ Modal ─
+function openNckhModal(){
+  nckh_editingId=null; nckh_pendingFile=null; nckh_removeFile=false;
+  document.getElementById('nckh-modal-title').textContent='Thêm đề tài NCKH';
+  document.getElementById('nk-save-btn').textContent='Lưu đề tài';
+  ['nk-ten','nk-chu','nk-congsu','nk-noi','nk-ghichu'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nk-tinhtrang').value='';
+  document.getElementById('nk-ngay').value='';
+  document.getElementById('nk-file').value='';
+  document.getElementById('nk-file-label').textContent='Chưa chọn file';
+  document.getElementById('nk-file-current').style.display='none';
+  document.getElementById('nckh-modal').style.display='flex';
+}
+function openEditNckhModal(id){
+  const item = nckh_all.find(x=>x.id===id); if(!item) return;
+  nckh_editingId=id; nckh_pendingFile=null; nckh_removeFile=false;
+  document.getElementById('nckh-modal-title').textContent='Chỉnh sửa đề tài';
+  document.getElementById('nk-save-btn').textContent='Lưu thay đổi';
+  document.getElementById('nk-ten').value=item.ten_de_tai||'';
+  document.getElementById('nk-chu').value=item.chu_de_tai||'';
+  document.getElementById('nk-congsu').value=item.cong_su||'';
+  document.getElementById('nk-tinhtrang').value=item.tinh_trang||'';
+  document.getElementById('nk-ngay').value=item.ngay_bao_cao||'';
+  document.getElementById('nk-noi').value=item.noi_bao_cao||'';
+  document.getElementById('nk-ghichu').value=item.ghi_chu||'';
+  document.getElementById('nk-file').value='';
+  document.getElementById('nk-file-label').textContent='Chưa chọn file mới';
+  const cur = document.getElementById('nk-file-current');
+  if(item.file_name){
+    cur.style.display='flex';
+    document.getElementById('nk-file-name-display').textContent=item.file_name;
+  } else { cur.style.display='none'; }
+  document.getElementById('nckh-modal').style.display='flex';
+}
+function closeNckhModal(){ document.getElementById('nckh-modal').style.display='none'; }
+
+function handleNckhFile(e){
+  const file = e.target.files[0]; if(!file) return;
+  if(file.type!=='application/pdf'){ toast('Chỉ chấp nhận file PDF','error'); return; }
+  nckh_pendingFile = file;
+  document.getElementById('nk-file-label').textContent = file.name;
+  document.getElementById('nk-file-current').style.display='none';
+}
+function removeNckhFile(){
+  nckh_removeFile=true; nckh_pendingFile=null;
+  document.getElementById('nk-file-current').style.display='none';
+  document.getElementById('nk-file-label').textContent='File đã được xóa';
+}
+
+async function saveNckh(){
+  const ten = document.getElementById('nk-ten').value.trim();
+  if(!ten){ toast('Vui lòng nhập tên đề tài','error'); return; }
+  const btn = document.getElementById('nk-save-btn');
+  btn.disabled=true; btn.textContent='Đang lưu...';
+  try {
+    let file_url = nckh_editingId ? (nckh_all.find(x=>x.id===nckh_editingId)?.file_url||'') : '';
+    let file_path = nckh_editingId ? (nckh_all.find(x=>x.id===nckh_editingId)?.file_path||'') : '';
+    let file_name = nckh_editingId ? (nckh_all.find(x=>x.id===nckh_editingId)?.file_name||'') : '';
+
+    if(nckh_pendingFile){
+      document.getElementById('nk-upload-progress').style.display='block';
+      document.getElementById('nk-progress-bar').style.width='40%';
+      document.getElementById('nk-progress-text').textContent='Đang tải file lên...';
+      const result = await uploadNckhFile(nckh_pendingFile, file_path);
+      file_url=result.url; file_path=result.path; file_name=result.name;
+      document.getElementById('nk-progress-bar').style.width='100%';
+      document.getElementById('nk-progress-text').textContent='Tải lên thành công!';
+    } else if(nckh_removeFile){
+      if(file_path) await deleteNckhFile(file_path).catch(()=>{});
+      file_url=''; file_path=''; file_name='';
+    }
+
+    const data = {
+      ten_de_tai: ten,
+      chu_de_tai: document.getElementById('nk-chu').value.trim(),
+      cong_su: document.getElementById('nk-congsu').value.trim(),
+      tinh_trang: document.getElementById('nk-tinhtrang').value,
+      ngay_bao_cao: document.getElementById('nk-ngay').value||null,
+      noi_bao_cao: document.getElementById('nk-noi').value.trim(),
+      ghi_chu: document.getElementById('nk-ghichu').value.trim(),
+      file_url, file_path, file_name
+    };
+
+    if(nckh_editingId){ await nckhUpdate(nckh_editingId, data); toast('Đã cập nhật đề tài'); }
+    else { await nckhInsert(data); toast('Đã thêm đề tài NCKH'); }
+
+    closeNckhModal();
+    await renderNckh();
+  } catch(e){ toast('Lỗi: '+e.message,'error'); }
+  document.getElementById('nk-upload-progress').style.display='none';
+  btn.disabled=false; btn.textContent=nckh_editingId?'Lưu thay đổi':'Lưu đề tài';
+}
+
+async function deleteNckh(id){
+  if(!confirm('Xóa đề tài này? File PDF đính kèm cũng sẽ bị xóa.')) return;
+  try {
+    const item = nckh_all.find(x=>x.id===id);
+    if(item?.file_path) await deleteNckhFile(item.file_path).catch(()=>{});
+    await nckhDelete(id);
+    toast('Đã xóa đề tài');
+    await renderNckh();
+  } catch(e){ toast('Lỗi: '+e.message,'error'); }
+}
+
+function filterNckh(){
+  const q  = (document.getElementById('nckh-search')?.value||'').toLowerCase().trim();
+  const ft = document.getElementById('nckh-f-tinhtrang')?.value||'';
+  const filtered = nckh_all.filter(item=>{
+    if(q && !`${item.ten_de_tai||''} ${item.chu_de_tai||''} ${item.cong_su||''}`.toLowerCase().includes(q)) return false;
+    if(ft && item.tinh_trang!==ft) return false;
+    return true;
+  });
+  const countEl = document.getElementById('nckh-count');
+  if(countEl) countEl.textContent = (q||ft) ? `${filtered.length} / ${nckh_all.length} đề tài` : '';
+  renderNckhTable(filtered);
+}
+function clearNckhFilter(){
+  document.getElementById('nckh-search').value='';
+  document.getElementById('nckh-f-tinhtrang').value='';
+  filterNckh();
+}
+
+function renderNckhTable(items){
+  const isAdmin = currentUser?.role==='admin';
+  const table = document.getElementById('nckh-table');
+  if(!items.length){
+    table.innerHTML=`<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text3)">Chưa có đề tài nào</td></tr>`;
+    return;
+  }
+  table.innerHTML=`
+    <tr>
+      <th>#</th>
+      <th style="min-width:200px">Tên đề tài</th>
+      <th style="min-width:130px">Chủ đề tài</th>
+      <th style="min-width:150px">Cộng sự</th>
+      <th style="min-width:150px">Tình trạng</th>
+      <th>Ngày BC</th>
+      <th style="min-width:140px">Nơi báo cáo</th>
+      <th>File BC</th>
+      <th style="min-width:150px">Ghi chú</th>
+      ${isAdmin?'<th></th>':''}
+    </tr>
+    ${items.map((item,i)=>{
+      const tc = TINHTRANG_COLORS[item.tinh_trang]||'var(--text3)';
+      const ngay = item.ngay_bao_cao ? new Date(item.ngay_bao_cao).toLocaleDateString('vi-VN') : '—';
+      const fileCell = item.file_url
+        ? `<a href="${item.file_url}" target="_blank" style="color:var(--accent);font-size:12px;white-space:nowrap">📄 Xem PDF</a>`
+        : '<span style="color:var(--text3);font-size:12px">—</span>';
+      return `<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${i+1}</td>
+        <td style="font-weight:600">${item.ten_de_tai||'—'}</td>
+        <td style="color:var(--text2)">${item.chu_de_tai||'—'}</td>
+        <td style="color:var(--text2);font-size:12px">${item.cong_su||'—'}</td>
+        <td><span style="font-weight:600;font-size:12px;color:${tc}">${item.tinh_trang||'—'}</span></td>
+        <td style="font-size:12px;white-space:nowrap">${ngay}</td>
+        <td style="color:var(--text2);font-size:12px">${item.noi_bao_cao||'—'}</td>
+        <td>${fileCell}</td>
+        <td style="color:var(--text2);font-size:12px">${item.ghi_chu||'—'}</td>
+        ${isAdmin?`<td style="white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="openEditNckhModal('${item.id}')">✎</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteNckh('${item.id}')">✕</button>
+        </td>`:''}
+      </tr>`;
+    }).join('')}`;
+}
+
+async function renderNckh(){
+  // Hiện/ẩn nút thêm theo role
+  const isAdmin = currentUser?.role==='admin';
+  const adminBtns = document.getElementById('nckh-admin-btns');
+  if(adminBtns) adminBtns.style.display = isAdmin ? '' : 'none';
+
+  nckh_all = await nckhGetAll();
+
+  // Stats
+  const total = nckh_all.length;
+  const byStatus = ['Đã đăng ký','Đã duyệt đề cương','Đã hoàn thành kết quả','Đã báo cáo đề tài']
+    .map(s=>({s, count:nckh_all.filter(x=>x.tinh_trang===s).length}));
+  document.getElementById('nckh-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Tổng đề tài</div></div>
+    ${byStatus.map(({s,count})=>`
+    <div class="stat-card" style="border-top:3px solid ${TINHTRANG_COLORS[s]||'var(--border)'}">
+      <div class="stat-num" style="color:${TINHTRANG_COLORS[s]||'var(--text)'}">${count}</div>
+      <div class="stat-label">${s}</div>
+    </div>`).join('')}`;
+
+  filterNckh();
 }
 
 // ═══ DASHBOARD ═══
