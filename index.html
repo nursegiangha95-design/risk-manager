@@ -1450,26 +1450,89 @@ function exportCompareReport(){
 // ═══ EXPORT XLSX (file gốc) ═══
 function exportXlsx(){
   if(!state.risks.length){toast('Chưa có dữ liệu','error');return;}
-  const wb=XLSX.utils.book_new();
-  const ws_data=[
-    ['STT',null,null,null,'Mô tả rủi ro',null,null,'Đánh giá sơ bộ rủi ro (rủi ro hiện tại)',null,null,null,null,'Mục tiêu',null,null,'Hành động giảm thiểu',null,null,'Đánh giá tiến độ'],
-    [null,'Loại\nrủi ro','Rủi ro','Mô tả rủi ro','Nguyên nhân','Ảnh hưởng','Đơn vị\nquản lý','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Xu\nhướng','Hoạt động kiểm soát','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Biện pháp giảm thiểu rủi ro\nhướng tới tương lai','Đơn vị\nquản lý','Thời hạn','Đánh giá tiến độ'],
-  ];
-  [...state.risks].sort((a,b)=>(a.stt||0)-(b.stt||0)).forEach(r=>{
-    const ms=r.measures||[];
-    if(!ms.length){ ws_data.push([r.stt,r.loai,r.ten,r.mota,r.nguyen,r.anhhuo,r.donvi,r.kn,r.tacdong,r.mucdo,r.xuhuong,r.hoatdong,r.kn2,r.tacdong2,r.mucdo2,null,null,null,null]); }
-    else ms.forEach((m,idx)=>{
-      if(idx===0) ws_data.push([r.stt,r.loai,r.ten,r.mota,r.nguyen,r.anhhuo,r.donvi,r.kn,r.tacdong,r.mucdo,r.xuhuong,r.hoatdong,r.kn2,r.tacdong2,r.mucdo2,m.bienphap,m.donvi,m.thoihan,m.tiendo]);
-      else ws_data.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,m.bienphap,m.donvi,m.thoihan,m.tiendo]);
-    });
+  const wb = XLSX.utils.book_new();
+
+  // ─ Build rows + track merge ranges ─
+  const rows = [];
+  const merges = [];
+
+  // Header row 1
+  rows.push(['STT',null,null,null,'Mô tả rủi ro',null,null,'Đánh giá sơ bộ rủi ro (rủi ro hiện tại)',null,null,null,null,'Mục tiêu',null,null,'Hành động giảm thiểu',null,null,'Đánh giá tiến độ']);
+  // Header row 2
+  rows.push([null,'Loại\nrủi ro','Tên rủi ro','Mô tả rủi ro','Nguyên nhân','Ảnh hưởng','Đơn vị\nquản lý','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Xu\nhướng','Hoạt động kiểm soát','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Biện pháp giảm thiểu\nhướng tới tương lai','Đơn vị\nthực hiện','Thời hạn','Đánh giá tiến độ']);
+
+  // Header merges (row 0 = index 0)
+  merges.push(
+    {s:{r:0,c:0},e:{r:1,c:0}},   // STT
+    {s:{r:0,c:1},e:{r:0,c:6}},   // Mô tả rủi ro nhóm
+    {s:{r:0,c:7},e:{r:0,c:11}},  // Đánh giá sơ bộ
+    {s:{r:0,c:12},e:{r:0,c:14}}, // Mục tiêu
+    {s:{r:0,c:15},e:{r:0,c:17}}, // Hành động
+    {s:{r:0,c:18},e:{r:1,c:18}}, // Tiến độ
+  );
+
+  const sorted = [...state.risks].sort((a,b)=>(a.stt||0)-(b.stt||0));
+  let rowIdx = 2; // bắt đầu sau 2 header rows
+
+  sorted.forEach(r=>{
+    const ms = r.measures||[];
+    const nRows = ms.length || 1;
+
+    // Điền data
+    for(let i=0;i<nRows;i++){
+      const m = ms[i]||{};
+      if(i===0){
+        rows.push([
+          r.stt, r.loai, r.ten, r.mota,
+          r.nguyen, r.anhhuo, r.donvi,
+          r.kn, r.tacdong, r.mucdo, r.xuhuong, r.hoatdong,
+          r.kn2, r.tacdong2, r.mucdo2,
+          m.bienphap||'', m.donvi||'', m.thoihan||'', m.tiendo||''
+        ]);
+      } else {
+        rows.push([
+          null,null,null,null,null,null,null,
+          null,null,null,null,null,
+          null,null,null,
+          m.bienphap||'', m.donvi||'', m.thoihan||'', m.tiendo||''
+        ]);
+      }
+    }
+
+    // Merge các cột cố định theo số dòng của rủi ro
+    if(nRows>1){
+      [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14].forEach(c=>{
+        merges.push({s:{r:rowIdx,c},e:{r:rowIdx+nRows-1,c}});
+      });
+    }
+    rowIdx += nRows;
   });
-  const ws=XLSX.utils.aoa_to_sheet(ws_data);
-  ws['!cols']=[{wch:8},{wch:18},{wch:16},{wch:28},{wch:28},{wch:26},{wch:16},{wch:13},{wch:14},{wch:13},{wch:11},{wch:38},{wch:13},{wch:10},{wch:13},{wch:55},{wch:16},{wch:14},{wch:16}];
-  ws['!rows']=[{hpt:30},{hpt:36}];
-  ws['!merges']=[{s:{r:0,c:0},e:{r:1,c:0}},{s:{r:0,c:1},e:{r:0,c:6}},{s:{r:0,c:7},e:{r:0,c:11}},{s:{r:0,c:12},e:{r:0,c:14}},{s:{r:0,c:15},e:{r:0,c:17}},{s:{r:0,c:18},e:{r:1,c:18}}];
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = merges;
+  ws['!cols'] = [
+    {wch:6},{wch:18},{wch:18},{wch:28},
+    {wch:28},{wch:24},{wch:16},
+    {wch:13},{wch:12},{wch:13},{wch:10},{wch:36},
+    {wch:13},{wch:12},{wch:13},
+    {wch:50},{wch:16},{wch:14},{wch:18}
+  ];
+  ws['!rows'] = [{hpt:32},{hpt:40}];
+
+  // Style header
+  const headerStyle = {
+    font:{bold:true},
+    alignment:{horizontal:'center',vertical:'center',wrapText:true},
+    fill:{fgColor:{rgb:'D9E1F2'}},
+    border:{top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'}}
+  };
+  ['A1','B1','H1','M1','P1','S1','A2','B2','C2','D2','E2','F2','G2','H2','I2','J2','K2','L2','M2','N2','O2','P2','Q2','R2','S2'].forEach(cell=>{
+    if(ws[cell]) ws[cell].s = headerStyle;
+  });
+
   XLSX.utils.book_append_sheet(wb,ws,'Danh mục rủi ro');
   XLSX.writeFile(wb,`Danh_muc_rui_ro_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast('Đã xuất file Excel');
+  toast('Đã xuất file Excel có gộp ô');
 }
 
 // ═══ SUPABASE CONFIG ═══
@@ -2435,24 +2498,69 @@ function saveThietKeVanHanh(riskId, bienphap, field, value, rowIdx){
 }
 
 function exportHieuQuaXlsx(){
-  const allRows = state.risks.flatMap(r=>
-    (r.measures||[]).map(m=>({
-      stt:r.stt, ten:r.ten, mucdo:r.mucdo, loai:r.loai,
-      bienphap:m.bienphap, donvi:m.donvi, thoihan:m.thoihan,
-      tiendo:m.tiendo, thietke:m.thietke, vanhanh:m.vanhanh,
-      hieuqua:m.hieuqua||calcHieuQua(m.thietke,m.vanhanh),
-      hoatdongtiep:m.hoatdongtiep
-    }))
-  );
-  if(!allRows.length){ toast('Chưa có dữ liệu biện pháp để xuất','error'); return; }
+  if(!state.risks.length){ toast('Chưa có dữ liệu biện pháp để xuất','error'); return; }
   const wb = XLSX.utils.book_new();
-  const header = ['STT','Tên rủi ro','Mức độ','Loại rủi ro','Biện pháp','Đơn vị','Thời hạn','Tiến độ','Thiết kế','Vận hành','Hiệu quả','Hoạt động tiếp theo'];
-  const rows = allRows.map(r=>[r.stt,r.ten,r.mucdo,r.loai,r.bienphap,r.donvi,r.thoihan,r.tiendo,r.thietke,r.vanhanh,r.hieuqua,r.hoatdongtiep]);
-  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
-  ws['!cols']=[{wch:5},{wch:28},{wch:12},{wch:20},{wch:30},{wch:16},{wch:12},{wch:18},{wch:14},{wch:14},{wch:20},{wch:28}];
+  const rows = [];
+  const merges = [];
+
+  // Header
+  rows.push(['STT','Loại RR','Tên rủi ro','Mức độ RR','Nguyên nhân','Ảnh hưởng','Đơn vị\nquản lý','KN xảy ra\n(trước KS)','Tác động\n(trước KS)','Mức độ\n(trước KS)','KN xảy ra\n(sau KS)','Tác động\n(sau KS)','Mức độ\n(sau KS)','Biện pháp giảm thiểu','Đơn vị\nthực hiện','Thời hạn','Tiến độ','Thiết kế','Vận hành','Hiệu quả','Hoạt động tiếp theo']);
+
+  const sorted = [...state.risks].sort((a,b)=>(a.stt||0)-(b.stt||0));
+  let rowIdx = 1;
+
+  sorted.forEach(r=>{
+    const ms = r.measures||[];
+    const nRows = ms.length||1;
+
+    for(let i=0;i<nRows;i++){
+      const m = ms[i]||{};
+      const hq = m.hieuqua||calcHieuQua(m.thietke,m.vanhanh)||'';
+      if(i===0){
+        rows.push([
+          r.stt, r.loai, r.ten, r.mucdo,
+          r.nguyen, r.anhhuo, r.donvi,
+          r.kn, r.tacdong, r.mucdo,
+          r.kn2, r.tacdong2, r.mucdo2,
+          m.bienphap||'', m.donvi||'', m.thoihan||'',
+          m.tiendo||'', m.thietke||'', m.vanhanh||'', hq,
+          m.hoatdongtiep||''
+        ]);
+      } else {
+        rows.push([
+          null,null,null,null,null,null,null,
+          null,null,null,null,null,null,
+          m.bienphap||'', m.donvi||'', m.thoihan||'',
+          m.tiendo||'', m.thietke||'', m.vanhanh||'', hq,
+          m.hoatdongtiep||''
+        ]);
+      }
+    }
+
+    // Gộp các cột cố định (0–13: STT đến Mức độ sau KS)
+    if(nRows>1){
+      [0,1,2,3,4,5,6,7,8,9,10,11,12].forEach(c=>{
+        merges.push({s:{r:rowIdx,c},e:{r:rowIdx+nRows-1,c}});
+      });
+    }
+    rowIdx += nRows;
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!merges'] = merges;
+  ws['!cols'] = [
+    {wch:6},{wch:18},{wch:20},{wch:13},
+    {wch:26},{wch:22},{wch:16},
+    {wch:13},{wch:12},{wch:13},
+    {wch:13},{wch:12},{wch:13},
+    {wch:46},{wch:16},{wch:14},
+    {wch:18},{wch:14},{wch:14},{wch:20},{wch:28}
+  ];
+  ws['!rows'] = [{hpt:40}];
+
   XLSX.utils.book_append_sheet(wb,ws,'Đánh giá hiệu quả');
   XLSX.writeFile(wb,`Danh_gia_hieu_qua_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast('Đã xuất file đánh giá hiệu quả');
+  toast('Đã xuất file đánh giá hiệu quả có gộp ô');
 }
 
 // ═══ NCKH MODULE ═══
