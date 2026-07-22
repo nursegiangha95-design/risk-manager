@@ -1451,55 +1451,37 @@ function exportCompareReport(){
 function exportXlsx(){
   if(!state.risks.length){toast('Chưa có dữ liệu','error');return;}
   const wb = XLSX.utils.book_new();
-
-  // ─ Build rows + track merge ranges ─
   const rows = [];
   const merges = [];
 
-  // Header row 1
+  // Header row 1 & 2
   rows.push(['STT',null,null,null,'Mô tả rủi ro',null,null,'Đánh giá sơ bộ rủi ro (rủi ro hiện tại)',null,null,null,null,'Mục tiêu',null,null,'Hành động giảm thiểu',null,null,'Đánh giá tiến độ']);
-  // Header row 2
   rows.push([null,'Loại\nrủi ro','Tên rủi ro','Mô tả rủi ro','Nguyên nhân','Ảnh hưởng','Đơn vị\nquản lý','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Xu\nhướng','Hoạt động kiểm soát','Khả năng\nxảy ra','Tác động','Mức độ\nrủi ro','Biện pháp giảm thiểu\nhướng tới tương lai','Đơn vị\nthực hiện','Thời hạn','Đánh giá tiến độ']);
 
-  // Header merges (row 0 = index 0)
+  // Header merges
   merges.push(
-    {s:{r:0,c:0},e:{r:1,c:0}},   // STT
-    {s:{r:0,c:1},e:{r:0,c:6}},   // Mô tả rủi ro nhóm
-    {s:{r:0,c:7},e:{r:0,c:11}},  // Đánh giá sơ bộ
-    {s:{r:0,c:12},e:{r:0,c:14}}, // Mục tiêu
-    {s:{r:0,c:15},e:{r:0,c:17}}, // Hành động
-    {s:{r:0,c:18},e:{r:1,c:18}}, // Tiến độ
+    {s:{r:0,c:0},e:{r:1,c:0}},
+    {s:{r:0,c:1},e:{r:0,c:6}},
+    {s:{r:0,c:7},e:{r:0,c:11}},
+    {s:{r:0,c:12},e:{r:0,c:14}},
+    {s:{r:0,c:15},e:{r:0,c:17}},
+    {s:{r:0,c:18},e:{r:1,c:18}},
   );
 
   const sorted = [...state.risks].sort((a,b)=>(a.stt||0)-(b.stt||0));
-  let rowIdx = 2; // bắt đầu sau 2 header rows
+  let rowIdx = 2;
 
   sorted.forEach(r=>{
     const ms = r.measures||[];
-    const nRows = ms.length || 1;
-
-    // Điền data
+    const nRows = ms.length||1;
     for(let i=0;i<nRows;i++){
       const m = ms[i]||{};
       if(i===0){
-        rows.push([
-          r.stt, r.loai, r.ten, r.mota,
-          r.nguyen, r.anhhuo, r.donvi,
-          r.kn, r.tacdong, r.mucdo, r.xuhuong, r.hoatdong,
-          r.kn2, r.tacdong2, r.mucdo2,
-          m.bienphap||'', m.donvi||'', m.thoihan||'', m.tiendo||''
-        ]);
+        rows.push([r.stt,r.loai,r.ten,r.mota,r.nguyen,r.anhhuo,r.donvi,r.kn,r.tacdong,r.mucdo,r.xuhuong,r.hoatdong,r.kn2,r.tacdong2,r.mucdo2,m.bienphap||'',m.donvi||'',m.thoihan||'',m.tiendo||'']);
       } else {
-        rows.push([
-          null,null,null,null,null,null,null,
-          null,null,null,null,null,
-          null,null,null,
-          m.bienphap||'', m.donvi||'', m.thoihan||'', m.tiendo||''
-        ]);
+        rows.push([null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,m.bienphap||'',m.donvi||'',m.thoihan||'',m.tiendo||'']);
       }
     }
-
-    // Merge các cột cố định theo số dòng của rủi ro
     if(nRows>1){
       [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14].forEach(c=>{
         merges.push({s:{r:rowIdx,c},e:{r:rowIdx+nRows-1,c}});
@@ -1510,29 +1492,72 @@ function exportXlsx(){
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!merges'] = merges;
-  ws['!cols'] = [
-    {wch:6},{wch:18},{wch:18},{wch:28},
-    {wch:28},{wch:24},{wch:16},
-    {wch:13},{wch:12},{wch:13},{wch:10},{wch:36},
-    {wch:13},{wch:12},{wch:13},
-    {wch:50},{wch:16},{wch:14},{wch:18}
-  ];
-  ws['!rows'] = [{hpt:32},{hpt:40}];
+  ws['!cols'] = [{wch:6},{wch:18},{wch:18},{wch:28},{wch:28},{wch:24},{wch:16},{wch:13},{wch:12},{wch:13},{wch:10},{wch:36},{wch:13},{wch:12},{wch:13},{wch:50},{wch:16},{wch:14},{wch:18}];
+  ws['!rows'] = [{hpt:32},{hpt:42}];
 
-  // Style header
-  const headerStyle = {
-    font:{bold:true},
-    alignment:{horizontal:'center',vertical:'center',wrapText:true},
-    fill:{fgColor:{rgb:'D9E1F2'}},
-    border:{top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'}}
-  };
-  ['A1','B1','H1','M1','P1','S1','A2','B2','C2','D2','E2','F2','G2','H2','I2','J2','K2','L2','M2','N2','O2','P2','Q2','R2','S2'].forEach(cell=>{
-    if(ws[cell]) ws[cell].s = headerStyle;
-  });
+  // ─ Style helpers ─
+  const border = {top:{style:'thin',color:{rgb:'BFBFBF'}},bottom:{style:'thin',color:{rgb:'BFBFBF'}},left:{style:'thin',color:{rgb:'BFBFBF'}},right:{style:'thin',color:{rgb:'BFBFBF'}}};
+  const alignCC = {horizontal:'center',vertical:'center',wrapText:true};
+  const alignLC = {horizontal:'left',vertical:'center',wrapText:true};
+
+  // Màu header theo nhóm (từ file mẫu)
+  const H_STT   = {rgb:'0F9952'}; // xanh lá đậm — STT
+  const H_MOTA  = {rgb:'0F9952'}; // xanh lá — nhóm Mô tả
+  const H_SOBOV = {rgb:'71CB4F'}; // xanh lá nhạt — Đánh giá sơ bộ
+  const H_MUCT  = {rgb:'00AEAD'}; // xanh teal — Mục tiêu
+  const H_HANHD = {rgb:'00AEAD'}; // xanh teal — Hành động
+  const H_SUB   = {rgb:'D9D9D9'}; // xám — sub-header row 2
+  const H_SUB2  = {rgb:'F2F2F2'}; // xám nhạt — sub-header cột mục tiêu+
+
+  const fontWhiteBold = {bold:true,color:{rgb:'FFFFFF'},sz:10};
+  const fontDarkBold  = {bold:true,color:{rgb:'361A42'},sz:11};
+
+  function setStyle(ref, fill, font, align){
+    if(!ws[ref]) ws[ref]={t:'s',v:ws[ref]?.v||''};
+    ws[ref].s = {fill:{patternType:'solid',fgColor:fill}, font, alignment:align, border};
+  }
+
+  // Row 1 headers
+  setStyle('A1', H_STT,   fontWhiteBold, alignCC);
+  setStyle('B1', H_MOTA,  fontWhiteBold, alignCC);
+  setStyle('H1', H_SOBOV, fontWhiteBold, alignCC);
+  setStyle('M1', H_MUCT,  fontWhiteBold, alignCC);
+  setStyle('P1', H_HANHD, fontWhiteBold, alignCC);
+  setStyle('S1', H_HANHD, fontWhiteBold, alignCC);
+
+  // Row 2 sub-headers
+  ['B2','C2','D2','E2','F2','G2','H2','I2','J2','K2','L2'].forEach(c=>setStyle(c, H_SUB,  fontDarkBold, alignCC));
+  ['M2','N2','O2','P2','Q2','R2'].forEach(c=>setStyle(c, H_SUB2, fontDarkBold, alignCC));
+  setStyle('S2', {rgb:'FFFFFF'}, fontDarkBold, alignCC);
+  setStyle('A2', H_STT,   fontWhiteBold, alignCC);
+
+  // Data rows style
+  const mucDoColor = {'Trọng yếu':{rgb:'FF0000'},'Đáng kể':{rgb:'E36C09'},'Trung bình':{rgb:'C8A800'},'Thấp':{rgb:'538135'}};
+  const dataFont = {sz:10, color:{rgb:'000000'}};
+  const rowCount = rows.length;
+  for(let r=2;r<rowCount;r++){
+    for(let c=0;c<19;c++){
+      const ref = XLSX.utils.encode_cell({r,c});
+      if(!ws[ref]) ws[ref]={t:'s',v:''};
+      const isEven = (r%2===0);
+      const bgColor = isEven ? {rgb:'FFFFFF'} : {rgb:'F7F9FC'};
+      let font = {...dataFont};
+      // Highlight mức độ
+      if(c===9||c===14){
+        const val = ws[ref].v;
+        if(mucDoColor[val]) font = {...dataFont, bold:true, color:mucDoColor[val]};
+      }
+      ws[ref].s = {
+        fill:{patternType:'solid',fgColor:bgColor},
+        font, border,
+        alignment: c===0 ? alignCC : alignLC
+      };
+    }
+  }
 
   XLSX.utils.book_append_sheet(wb,ws,'Danh mục rủi ro');
   XLSX.writeFile(wb,`Danh_muc_rui_ro_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast('Đã xuất file Excel có gộp ô');
+  toast('Đã xuất file Excel có style');
 }
 
 // ═══ SUPABASE CONFIG ═══
@@ -2503,7 +2528,6 @@ function exportHieuQuaXlsx(){
   const rows = [];
   const merges = [];
 
-  // Header
   rows.push(['STT','Loại RR','Tên rủi ro','Mức độ RR','Nguyên nhân','Ảnh hưởng','Đơn vị\nquản lý','KN xảy ra\n(trước KS)','Tác động\n(trước KS)','Mức độ\n(trước KS)','KN xảy ra\n(sau KS)','Tác động\n(sau KS)','Mức độ\n(sau KS)','Biện pháp giảm thiểu','Đơn vị\nthực hiện','Thời hạn','Tiến độ','Thiết kế','Vận hành','Hiệu quả','Hoạt động tiếp theo']);
 
   const sorted = [...state.risks].sort((a,b)=>(a.stt||0)-(b.stt||0));
@@ -2512,32 +2536,15 @@ function exportHieuQuaXlsx(){
   sorted.forEach(r=>{
     const ms = r.measures||[];
     const nRows = ms.length||1;
-
     for(let i=0;i<nRows;i++){
       const m = ms[i]||{};
       const hq = m.hieuqua||calcHieuQua(m.thietke,m.vanhanh)||'';
       if(i===0){
-        rows.push([
-          r.stt, r.loai, r.ten, r.mucdo,
-          r.nguyen, r.anhhuo, r.donvi,
-          r.kn, r.tacdong, r.mucdo,
-          r.kn2, r.tacdong2, r.mucdo2,
-          m.bienphap||'', m.donvi||'', m.thoihan||'',
-          m.tiendo||'', m.thietke||'', m.vanhanh||'', hq,
-          m.hoatdongtiep||''
-        ]);
+        rows.push([r.stt,r.loai,r.ten,r.mucdo,r.nguyen,r.anhhuo,r.donvi,r.kn,r.tacdong,r.mucdo,r.kn2,r.tacdong2,r.mucdo2,m.bienphap||'',m.donvi||'',m.thoihan||'',m.tiendo||'',m.thietke||'',m.vanhanh||'',hq,m.hoatdongtiep||'']);
       } else {
-        rows.push([
-          null,null,null,null,null,null,null,
-          null,null,null,null,null,null,
-          m.bienphap||'', m.donvi||'', m.thoihan||'',
-          m.tiendo||'', m.thietke||'', m.vanhanh||'', hq,
-          m.hoatdongtiep||''
-        ]);
+        rows.push([null,null,null,null,null,null,null,null,null,null,null,null,null,m.bienphap||'',m.donvi||'',m.thoihan||'',m.tiendo||'',m.thietke||'',m.vanhanh||'',hq,m.hoatdongtiep||'']);
       }
     }
-
-    // Gộp các cột cố định (0–13: STT đến Mức độ sau KS)
     if(nRows>1){
       [0,1,2,3,4,5,6,7,8,9,10,11,12].forEach(c=>{
         merges.push({s:{r:rowIdx,c},e:{r:rowIdx+nRows-1,c}});
@@ -2548,19 +2555,43 @@ function exportHieuQuaXlsx(){
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!merges'] = merges;
-  ws['!cols'] = [
-    {wch:6},{wch:18},{wch:20},{wch:13},
-    {wch:26},{wch:22},{wch:16},
-    {wch:13},{wch:12},{wch:13},
-    {wch:13},{wch:12},{wch:13},
-    {wch:46},{wch:16},{wch:14},
-    {wch:18},{wch:14},{wch:14},{wch:20},{wch:28}
-  ];
-  ws['!rows'] = [{hpt:40}];
+  ws['!cols'] = [{wch:6},{wch:18},{wch:20},{wch:13},{wch:26},{wch:22},{wch:16},{wch:13},{wch:12},{wch:13},{wch:13},{wch:12},{wch:13},{wch:46},{wch:16},{wch:14},{wch:18},{wch:14},{wch:14},{wch:20},{wch:28}];
+  ws['!rows'] = [{hpt:42}];
+
+  // Style
+  const border = {top:{style:'thin',color:{rgb:'BFBFBF'}},bottom:{style:'thin',color:{rgb:'BFBFBF'}},left:{style:'thin',color:{rgb:'BFBFBF'}},right:{style:'thin',color:{rgb:'BFBFBF'}}};
+  const alignCC = {horizontal:'center',vertical:'center',wrapText:true};
+  const alignLC = {horizontal:'left',vertical:'center',wrapText:true};
+  const hqColor = {'Hiệu quả':{rgb:'16A56E'},'Hiệu quả một phần':{rgb:'D97706'},'Không hiệu quả':{rgb:'E0334C'}};
+  const mucDoColor = {'Trọng yếu':{rgb:'FF0000'},'Đáng kể':{rgb:'E36C09'},'Trung bình':{rgb:'C8A800'},'Thấp':{rgb:'538135'}};
+
+  // Header style
+  const totalCols = 21;
+  for(let c=0;c<totalCols;c++){
+    const ref = XLSX.utils.encode_cell({r:0,c});
+    if(!ws[ref]) ws[ref]={t:'s',v:''};
+    const bg = c<13 ? {rgb:'0F9952'} : {rgb:'00AEAD'};
+    ws[ref].s = {fill:{patternType:'solid',fgColor:bg},font:{bold:true,color:{rgb:'FFFFFF'},sz:10},alignment:alignCC,border};
+  }
+
+  // Data rows
+  for(let r=1;r<rows.length;r++){
+    for(let c=0;c<totalCols;c++){
+      const ref = XLSX.utils.encode_cell({r,c});
+      if(!ws[ref]) ws[ref]={t:'s',v:''};
+      const isEven = (r%2===0);
+      const bg = isEven ? {rgb:'FFFFFF'} : {rgb:'F7F9FC'};
+      let font = {sz:10,color:{rgb:'000000'}};
+      const val = ws[ref].v;
+      if((c===3||c===9||c===12) && mucDoColor[val]) font = {sz:10,bold:true,color:mucDoColor[val]};
+      if(c===19 && hqColor[val]) font = {sz:10,bold:true,color:hqColor[val]};
+      ws[ref].s = {fill:{patternType:'solid',fgColor:bg},font,border,alignment:c===0?alignCC:alignLC};
+    }
+  }
 
   XLSX.utils.book_append_sheet(wb,ws,'Đánh giá hiệu quả');
   XLSX.writeFile(wb,`Danh_gia_hieu_qua_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast('Đã xuất file đánh giá hiệu quả có gộp ô');
+  toast('Đã xuất file đánh giá hiệu quả có style');
 }
 
 // ═══ NCKH MODULE ═══
