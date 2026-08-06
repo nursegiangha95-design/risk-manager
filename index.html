@@ -518,18 +518,30 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
           <div class="fmea-card" style="margin-bottom:16px">
             <div style="font-size:16px;font-weight:700;color:#0F9952;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #0F9952">3. CÁC TÍNH NĂNG CHÍNH</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px">
-              ${[
-                ['📊','Dashboard','Tổng quan rủi ro với biểu đồ và KPI. Click vào bất kỳ số liệu nào để xem danh sách chi tiết.'],
-                ['📋','Danh sách rủi ro','Nhập và quản lý toàn bộ rủi ro. Chọn Khả năng × Ảnh hưởng → Mức độ tự tính theo ma trận 5×5. Mỗi rủi ro có thể có nhiều biện pháp.'],
-                ['🧪','FMEA','Phân tích sai lỗi theo RPN = S×O×D. RPN≥200: Trọng yếu, 100-199: Đáng kể, <100: Chấp nhận. Nhấn → DMRR để chuyển vào danh sách rủi ro.'],
-                ['✅','Đánh giá hiệu quả','Đánh giá từng biện pháp theo Thiết kế × Vận hành = Hiệu quả. Nhập trực tiếp trong bảng, có tìm kiếm và filter theo đơn vị/tiến độ.'],
-                ['🔬','NCKH (Admin)','Quản lý đề tài nghiên cứu khoa học. Admin upload file PDF báo cáo. Viewer chỉ xem và mở file.'],
-                ['📖','Hướng dẫn','Trang này 😊'],
-              ].map(([icon,name,desc])=>`
-                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
-                  <div style="font-weight:700;font-size:13px;margin-bottom:6px">${icon} ${name}</div>
-                  <div style="font-size:12px;color:var(--text2);line-height:1.6">${desc}</div>
-                </div>`).join('')}
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px">📊 Dashboard</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">Tổng quan rủi ro với biểu đồ và KPI. Click vào bất kỳ số liệu nào để xem danh sách chi tiết.</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px">📋 Danh sách rủi ro</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">Nhập và quản lý toàn bộ rủi ro. Chọn Khả năng × Ảnh hưởng → Mức độ tự tính theo ma trận 5×5. Mỗi rủi ro có thể có nhiều biện pháp.</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px">🧪 FMEA</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">Phân tích sai lỗi theo RPN = S×O×D. RPN≥200: Trọng yếu, 100–199: Đáng kể, &lt;100: Chấp nhận. Nhấn → DMRR để chuyển vào danh sách rủi ro.</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px">✅ Đánh giá hiệu quả</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">Đánh giá từng biện pháp theo Thiết kế × Vận hành = Hiệu quả. Nhập trực tiếp trong bảng, có tìm kiếm và filter theo đơn vị/tiến độ.</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px">🔬 NCKH (Admin)</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">Quản lý đề tài nghiên cứu khoa học. Admin upload file PDF báo cáo. Viewer chỉ xem và mở file.</div>
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px">📖 Hướng dẫn</div>
+                <div style="font-size:12px;color:var(--text2);line-height:1.6">Trang này 😊</div>
+              </div>
             </div>
           </div>
 
@@ -551,16 +563,11 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
             <div style="overflow-x:auto;margin-bottom:20px">
               <table class="fmea-table" style="min-width:500px">
                 <tr><th>Ảnh hưởng \ Khả năng</th><th>Rất khó</th><th>Khó xảy ra</th><th>Có thể</th><th>Rất có thể</th><th>Gần như chắc chắn</th></tr>
-                ${[
-                  ['Rất cao','Trung bình','Đáng kể','Trọng yếu','Trọng yếu','Trọng yếu'],
-                  ['Cao','Trung bình','Trung bình','Đáng kể','Trọng yếu','Trọng yếu'],
-                  ['Trung bình','Thấp','Trung bình','Trung bình','Đáng kể','Trọng yếu'],
-                  ['Thấp','Thấp','Thấp','Trung bình','Trung bình','Đáng kể'],
-                  ['Rất thấp','Thấp','Thấp','Thấp','Trung bình','Đáng kể'],
-                ].map(row=>`<tr>${row.map((c,i)=>{
-                  const color={'Trọng yếu':'#fdedef','Đáng kể':'#fef6e8','Trung bình':'#fffff0','Thấp':'#e8f7f2'}[c]||'';
-                  return `<td style="background:${color};font-weight:${i>0?'600':'400'};text-align:center">${c}</td>`;
-                }).join('')}</tr>`).join('')}
+                <tr><td>Rất cao</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fef6e8;font-weight:600;text-align:center">Đáng kể</td><td style="background:#fdedef;font-weight:600;text-align:center">Trọng yếu</td><td style="background:#fdedef;font-weight:600;text-align:center">Trọng yếu</td><td style="background:#fdedef;font-weight:600;text-align:center">Trọng yếu</td></tr>
+                <tr><td>Cao</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fef6e8;font-weight:600;text-align:center">Đáng kể</td><td style="background:#fdedef;font-weight:600;text-align:center">Trọng yếu</td><td style="background:#fdedef;font-weight:600;text-align:center">Trọng yếu</td></tr>
+                <tr><td>Trung bình</td><td style="background:#e8f7f2;font-weight:600;text-align:center">Thấp</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fef6e8;font-weight:600;text-align:center">Đáng kể</td><td style="background:#fdedef;font-weight:600;text-align:center">Trọng yếu</td></tr>
+                <tr><td>Thấp</td><td style="background:#e8f7f2;font-weight:600;text-align:center">Thấp</td><td style="background:#e8f7f2;font-weight:600;text-align:center">Thấp</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fef6e8;font-weight:600;text-align:center">Đáng kể</td></tr>
+                <tr><td>Rất thấp</td><td style="background:#e8f7f2;font-weight:600;text-align:center">Thấp</td><td style="background:#e8f7f2;font-weight:600;text-align:center">Thấp</td><td style="background:#e8f7f2;font-weight:600;text-align:center">Thấp</td><td style="background:#fffff0;font-weight:600;text-align:center">Trung bình</td><td style="background:#fef6e8;font-weight:600;text-align:center">Đáng kể</td></tr>
               </table>
             </div>
             <div style="font-weight:600;font-size:13px;margin-bottom:8px">Ma trận Thiết kế × Vận hành</div>
@@ -605,9 +612,11 @@ label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bot
     </div>
     <div class="modal-body">
       <div class="form-grid">
+        <div id="u-guide-new" style="background:var(--amber-bg);border:1px solid #f5d8a0;border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--amber);line-height:1.5">
+          ⚠ Trước tiên vào <b>Supabase Dashboard → Authentication → Users → Add user</b> để tạo tài khoản đăng nhập (email + mật khẩu) cho người này. Sau đó nhập đúng email đó bên dưới để gán quyền — bước này chỉ thêm dòng phân quyền, không tạo mật khẩu.
+        </div>
         <div><label>Họ tên</label><input type="text" id="u-hoten" placeholder="VD: Nguyễn Thị Hoa"></div>
-        <div><label>Email *</label><input type="email" id="u-email" placeholder="email@benhvien.com"></div>
-        <div id="u-password-wrap"><label>Mật khẩu *</label><input type="password" id="u-password" placeholder="Tối thiểu 6 ký tự"></div>
+        <div><label>Email * (phải trùng email đã tạo trên Supabase Dashboard)</label><input type="email" id="u-email" placeholder="email@benhvien.com"></div>
         <div>
           <label>Phân quyền</label>
           <select id="u-role">
@@ -1676,12 +1685,12 @@ async function sbAuthSignOut(token){
   }).catch(()=>{});
 }
 
-async function sbGetProfile(userId, token){
-  const r = await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${userId}&select=*`, {
+async function sbGetProfile(email, token){
+  const r = await fetch(`${SB_URL}/rest/v1/user_profiles?email=eq.${encodeURIComponent(email)}&select=*`, {
     headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+token}
   });
   const d = await r.json();
-  console.log('sbGetProfile status:', r.status, 'data:', d, 'userId:', userId);
+  console.log('sbGetProfile status:', r.status, 'data:', d, 'email:', email);
   return d[0] || null;
 }
 
@@ -1712,25 +1721,11 @@ async function sbDeleteProfile(userId){
   await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${userId}`, {method:'DELETE',headers:SB_HEADERS});
 }
 
-async function sbAdminCreateUser(email, password){
-  // Dùng signup endpoint (admin tạo user)
-  const r = await fetch(`${SB_URL}/auth/v1/admin/users`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},
-    body: JSON.stringify({email, password, email_confirm:true})
-  });
-  const d = await r.json();
-  if(!r.ok) throw new Error(d.message||d.msg||'Lỗi tạo user');
-  return d;
-}
-
-async function sbAdminDeleteUser(userId){
-  const r = await fetch(`${SB_URL}/auth/v1/admin/users/${userId}`, {
-    method:'DELETE',
-    headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
-  });
-  if(!r.ok){ const e=await r.json(); throw new Error(e.message||'Lỗi xóa user'); }
-}
+// Lưu ý: KHÔNG dùng /auth/v1/admin/users nữa — endpoint đó bắt buộc service_role key
+// (khóa bí mật phía server), trong khi SB_KEY ở đây là anon key public nên luôn bị từ chối.
+// Việc tạo tài khoản đăng nhập thật (email/mật khẩu) giờ làm thủ công trong
+// Supabase Dashboard → Authentication → Users. App chỉ còn quản lý bảng phân quyền
+// user_profiles (xem saveUser/deleteUser), khớp theo email — không cần service_role key.
 
 // ─ Lưu/lấy session từ localStorage ─
 const SESSION_KEY = 'riskapp_session';
@@ -1780,7 +1775,7 @@ async function onLoginSuccess(session){
   updateSBHeaders(session.access_token);
   saveSession(session);
 
-  const profile = await sbGetProfile(session.user.id, session.access_token);
+  const profile = await sbGetProfile(session.user.email, session.access_token);
   if(!profile){
     document.getElementById('login-error').textContent='Tài khoản chưa được cấp quyền. Liên hệ quản trị viên.';
     document.getElementById('login-error').style.display='block';
@@ -1840,10 +1835,10 @@ let editingUserId = null;
 function openAddUserModal(){
   editingUserId=null;
   document.getElementById('user-modal-title').textContent='Thêm người dùng';
-  document.getElementById('u-save-btn').textContent='Tạo tài khoản';
-  ['u-hoten','u-email','u-password','u-donvi'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('u-save-btn').textContent='Thêm quyền';
+  ['u-hoten','u-email','u-donvi'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('u-role').value='viewer';
-  document.getElementById('u-password-wrap').style.display='';
+  document.getElementById('u-guide-new').style.display='';
   document.getElementById('u-email').readOnly=false;
   document.getElementById('user-modal').style.display='flex';
 }
@@ -1857,7 +1852,7 @@ function openEditUserModal(userId, hoten, email, role, donvi){
   document.getElementById('u-email').readOnly=true;
   document.getElementById('u-role').value=role||'viewer';
   document.getElementById('u-donvi').value=donvi||'';
-  document.getElementById('u-password-wrap').style.display='none';
+  document.getElementById('u-guide-new').style.display='none';
   document.getElementById('user-modal').style.display='flex';
 }
 
@@ -1866,7 +1861,6 @@ function closeUserModal(){ document.getElementById('user-modal').style.display='
 async function saveUser(){
   const hoten = document.getElementById('u-hoten').value.trim();
   const email = document.getElementById('u-email').value.trim();
-  const pwd   = document.getElementById('u-password').value;
   const role  = document.getElementById('u-role').value;
   const donvi = document.getElementById('u-donvi').value.trim();
   if(!email){ toast('Vui lòng nhập email','error'); return; }
@@ -1877,22 +1871,26 @@ async function saveUser(){
       await sbUpdateProfile(editingUserId, {ho_ten:hoten, role, don_vi:donvi});
       toast('Đã cập nhật người dùng');
     } else {
-      if(!pwd||pwd.length<6){ toast('Mật khẩu phải ít nhất 6 ký tự','error'); btn.disabled=false; btn.textContent='Tạo tài khoản'; return; }
-      const newUser = await sbAdminCreateUser(email, pwd);
-      await sbUpsertProfile({id:newUser.id, email, ho_ten:hoten, role, don_vi:donvi});
-      toast(`Đã tạo tài khoản cho ${hoten||email}`);
+      // Thêm quyền trực tiếp vào bảng user_profiles (khớp theo email).
+      // Tài khoản đăng nhập thật (email+mật khẩu) phải được tạo trước trong Supabase Dashboard.
+      const existing = await sbGetAllProfiles();
+      if(existing.some(u=>(u.email||'').toLowerCase()===email.toLowerCase())){
+        toast('Email này đã có trong danh sách phân quyền','error');
+        btn.disabled=false; btn.textContent='Thêm quyền'; return;
+      }
+      await sbUpsertProfile({id:crypto.randomUUID(), email, ho_ten:hoten, role, don_vi:donvi});
+      toast(`Đã thêm quyền cho ${hoten||email}. Nhắc họ đăng nhập bằng tài khoản đã tạo trên Supabase Dashboard.`);
     }
     closeUserModal(); renderAdminTab();
   } catch(e){ toast('Lỗi: '+e.message,'error'); }
-  btn.disabled=false; btn.textContent=editingUserId?'Lưu thay đổi':'Tạo tài khoản';
+  btn.disabled=false; btn.textContent=editingUserId?'Lưu thay đổi':'Thêm quyền';
 }
 
 async function deleteUser(userId, email){
-  if(!confirm(`Xóa tài khoản "${email}"?`)) return;
+  if(!confirm(`Xóa quyền của "${email}"? (Tài khoản đăng nhập trên Supabase Auth sẽ KHÔNG bị xóa — xóa thủ công trong Dashboard nếu cần)`)) return;
   try {
     await sbDeleteProfile(userId);
-    await sbAdminDeleteUser(userId);
-    toast('Đã xóa tài khoản'); renderAdminTab();
+    toast('Đã xóa quyền'); renderAdminTab();
   } catch(e){ toast('Lỗi: '+e.message,'error'); }
 }
 
@@ -3271,7 +3269,7 @@ function donutSVG(segments, total){
   const saved = loadSession();
   if(saved && saved.access_token){
     try {
-      const profile = await sbGetProfile(saved.user.id, saved.access_token);
+      const profile = await sbGetProfile(saved.user.email, saved.access_token);
       if(profile){
         await onLoginSuccess(saved);
         return;
